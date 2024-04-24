@@ -1,10 +1,10 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # https://github.com/fsaintjacques/semver-tool/tree/master
 
 set -e
 
-if [ -n "${GITHUB_WORKSPACE}" ]; then
+if [[ -n "${GITHUB_WORKSPACE}" ]]; then
   git config --global --add safe.directory "${GITHUB_WORKSPACE}" || exit
   cd "${GITHUB_WORKSPACE}" || exit
 fi
@@ -53,7 +53,7 @@ setup_from_push_event() {
 list_pulls() {
   pulls_endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc"
 
-  if [ -n "${INPUT_GITHUB_TOKEN}" ]; then
+  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
     curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${pulls_endpoint}"
   else
     echo "INPUT_GITHUB_TOKEN is not available. Subscequent GitHub API call may fail due to API limit." >&2
@@ -67,7 +67,7 @@ post_pre_status() {
   head_label="$(jq -r '.pull_request.head.label' < "${GITHUB_EVENT_PATH}" )"
   compare=""
 
-  if [ -n "${CURRENT_VERSION}" ]; then
+  if [[ -n "${CURRENT_VERSION}" ]]; then
     compare="**Changes**:[${CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${CURRENT_VERSION}...${head_label})"
   fi
 
@@ -77,7 +77,7 @@ ${compare}"
 
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
 
-  if [ "${FROM_FORK}" = "true" ]; then
+  if [[ "${FROM_FORK}" == "true" ]]; then
     post_warning "${post_txt}"
   else
     post_comment "${post_txt}"
@@ -87,7 +87,7 @@ ${compare}"
 post_post_status() {
   compare=""
 
-  if [ -n "${CURRENT_VERSION}" ]; then
+  if [[ -n "${CURRENT_VERSION}" ]]; then
     compare="**Changes**:[${CURRENT_VERSION}...${NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${CURRENT_VERSION}...${NEXT_VERSION})"
   fi
 
@@ -120,7 +120,9 @@ post_warning() {
 # Get labels and Pull Request data.
 ACTION=$(jq -r '.action' < "${GITHUB_EVENT_PATH}" )
 
-if [ "${ACTION}" = "labeled" ]; then
+jq < "${GITHUB_EVENT_PATH}"
+
+if [[ "${ACTION}" == "labeled" ]]; then
   setup_from_labeled_event
 else
   setup_from_push_event
@@ -138,10 +140,10 @@ elif echo "${LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
   BUMP_LEVEL="none"
 fi
 
-if [ -z "${BUMP_LEVEL}" ] || [ "${BUMP_LEVEL}" = "none" ]; then
+if [[ -z "${BUMP_LEVEL}" || "${BUMP_LEVEL}" == "none" ]]; then
   echo "PR with labels for bump not found or bump level is 'none'. Do nothing."
 
-  if [ -z "${BUMP_LEVEL}" ] && [ "${INPUT_FAIL_IF_NO_BUMP}" = "true" ]; then
+  if [[ -z "${BUMP_LEVEL}" && "${INPUT_FAIL_IF_NO_BUMP}" == "true" ]]; then
     echo "PR fails as no bump label is found."
     exit 1
   fi
@@ -166,7 +168,7 @@ CURRENT_VERSION="$(git describe --abbrev=0 --tags)" || true
 NEXT_VERSION="v$(semver bump ${BUMP_LEVEL} ${CURRENT_VERSION})" || true
 
 # Set next version tag in case existing tags not found.
-if [ -z "${NEXT_VERSION}" ] && [ -z "$(git tag)" ]; then
+if [[ -z "${NEXT_VERSION}" && -z "$(git tag)" ]]; then
 	case "${BUMP_LEVEL}" in
 		major)
 			NEXT_VERSION="v1.0.0"
@@ -180,15 +182,15 @@ if [ -z "${NEXT_VERSION}" ] && [ -z "$(git tag)" ]; then
 	esac
 fi
 
-if [ -z "${NEXT_VERSION}" ]; then
+if [[ -z "${NEXT_VERSION}" ]]; then
   echo "Cannot find next version."
   exit 1
 fi
 
 # Remove 'v' prefix if variable is false casted from string
 
-if [ "${INPUT_INCLUDE_V}" = "false" ]; then
-  NEXT_VERSION=$(echo "$NEXT_VERSION" | sed 's/^v//')
+if [[ "${INPUT_INCLUDE_V}" == "false" ]]; then
+  NEXT_VERSION="${NEXT_VERSION/^v/}"
 fi
 
 echo "current_version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
@@ -197,7 +199,7 @@ echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
 TAG_MESSAGE="${NEXT_VERSION}: PR #${PR_NUMBER} - ${PR_TITLE}"
 echo "message=${TAG_MESSAGE}" >> "$GITHUB_OUTPUT"
 
-if [ "${INPUT_DRY_RUN}" = "true" ]; then
+if [[ "${INPUT_DRY_RUN}" == "true" ]]; then
   echo "DRY_RUN=true. Do not tag next version."
   echo "PR_NUMBER=${PR_NUMBER}"
   echo "PR_TITLE=${PR_TITLE}"
@@ -205,7 +207,7 @@ if [ "${INPUT_DRY_RUN}" = "true" ]; then
   exit
 fi
 
-if [ "${ACTION}" = "labeled" ]; then
+if [[ "${ACTION}" == "labeled" ]]; then
   post_pre_status
 else
   # Set up Git.
@@ -215,13 +217,13 @@ else
   # Push the next tag.
   git tag -a "${NEXT_VERSION}" -m "${TAG_MESSAGE}"
 
-  if [ -n "${INPUT_GITHUB_TOKEN}" ]; then
+  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
     git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
   fi
 
   git push origin "${NEXT_VERSION}"
 
-  if [ "${INPUT_BUMP_SEMVER}" = "true" ] && [ "${GITHUB_REF}" != "${TAG}" ]; then
+  if [[ "${INPUT_BUMP_SEMVER}" == "true" && "${GITHUB_REF}" != "${TAG}" ]]; then
     PATCH="${NEXT_VERSION}" # v1.2.3
     MINOR="${PATCH%.*}"     # v1.2
     MAJOR="${MINOR%.*}"     # v1
