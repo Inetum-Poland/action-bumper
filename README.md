@@ -1,5 +1,7 @@
 # action-bumper
 
+[![.github/workflows/pre_commit.yml](https://github.com/Inetum-Poland/action-bumper/actions/workflows/pre_commit.yml/badge.svg)](https://github.com/Inetum-Poland/action-bumper/actions/workflows/pre_commit.yml) [![.github/workflows/trufflehog.yaml](https://github.com/Inetum-Poland/action-bumper/actions/workflows/trufflehog.yaml/badge.svg)](https://github.com/Inetum-Poland/action-bumper/actions/workflows/trufflehog.yaml)
+
 _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), [update-semver](https://github.com/haya14busa/action-update-semver)._
 
 **action-bumper** bumps semantic version tag on merging Pull Requests with specific labels (`bumper:major`,`bumper:minor`,`bumper:patch`, `bumper:none`).
