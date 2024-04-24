@@ -18,16 +18,16 @@ fi
 setup_from_labeled_event() {
   label=$(jq -r '.label.name' < "${GITHUB_EVENT_PATH}")
 
-  if echo "${label}" | grep ${INPUT_BUMP_MAJOR} ; then
+  if echo "${label}" | grep "${INPUT_BUMP_MAJOR}" ; then
     echo "Found label=${label}" >&2
     LABELS="${INPUT_BUMP_MAJOR}"
-  elif echo "${label}" | grep ${INPUT_BUMP_MINOR} ; then
+  elif echo "${label}" | grep "${INPUT_BUMP_MINOR}" ; then
     echo "Found label=${label}" >&2
     LABELS="${INPUT_BUMP_MINOR}"
-  elif echo "${label}" | grep ${INPUT_BUMP_PATCH} ; then
+  elif echo "${label}" | grep "${INPUT_BUMP_PATCH}" ; then
     echo "Found label=${label}" >&2
     LABELS="${INPUT_BUMP_PATCH}"
-  elif echo "${label}" | grep ${INPUT_BUMP_NONE} ; then
+  elif echo "${label}" | grep "${INPUT_BUMP_NONE}" ; then
     echo "Found label=${label}" >&2
     LABELS="${INPUT_BUMP_NONE}"
   else
@@ -105,6 +105,7 @@ post_comment() {
   endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments"
 
   # Do not quote body_text for multiline comments.
+  # shellcheck disable=SC2086
   body="$(echo ${body_text} | jq -ncR '{body: input}')"
   curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
 }
@@ -137,10 +138,10 @@ elif echo "${LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
   BUMP_LEVEL="none"
 fi
 
-if [ -z "${BUMP_LEVEL}" || "${BUMP_LEVEL}" = "none" ]; then
+if [ -z "${BUMP_LEVEL}" ] || [ "${BUMP_LEVEL}" = "none" ]; then
   echo "PR with labels for bump not found or bump level is 'none'. Do nothing."
 
-  if [ -z "${BUMP_LEVEL}" && "${INPUT_FAIL_IF_NO_BUMP}" = "true" ]; then
+  if [ -z "${BUMP_LEVEL}" ] && [ "${INPUT_FAIL_IF_NO_BUMP}" = "true" ]; then
     echo "PR fails as no bump label is found."
     exit 1
   fi
@@ -161,6 +162,7 @@ if "$(git rev-parse --is-shallow-repository)"; then
 fi
 
 CURRENT_VERSION="$(git describe --abbrev=0 --tags)" || true
+# shellcheck disable=SC2086
 NEXT_VERSION="v$(semver bump ${BUMP_LEVEL} ${CURRENT_VERSION})" || true
 
 # Set next version tag in case existing tags not found.
@@ -219,7 +221,7 @@ else
 
   git push origin "${NEXT_VERSION}"
 
-  if [ ${INPUT_BUMP_SEMVER} = "true" && "${GITHUB_REF}" != "${TAG}" ]; then
+  if [ "${INPUT_BUMP_SEMVER}" = "true" ] && [ "${GITHUB_REF}" != "${TAG}" ]; then
     PATCH="${NEXT_VERSION}" # v1.2.3
     MINOR="${PATCH%.*}"     # v1.2
     MAJOR="${MINOR%.*}"     # v1

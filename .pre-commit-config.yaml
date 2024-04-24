@@ -1,0 +1,66 @@
+---
+# https://github.com/antonbabenko/pre-commit-terraform
+# brew install pre-commit terraform-docs tflint tfsec trivy checkov terrascan infracost tfupdate minamijoyo/hcledit/hcledit jq
+
+# https://github.com/pre-commit/pre-commit-hooks
+# https://github.com/python-jsonschema/check-jsonschema/
+
+# https://github.com/trufflesecurity/trufflehog
+
+repos:
+- repo: https://github.com/compilerla/conventional-pre-commit
+  rev: v3.2.0
+  hooks:
+    - id: conventional-pre-commit
+      name: Check Conventional Commit
+      stages: [commit-msg]
+      args: [--strict, --force-scope]
+
+- repo: https://github.com/koalaman/shellcheck-precommit
+  rev: v0.10.0
+  hooks:
+    - id: shellcheck
+      name: Check Shellcheck
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: check-yaml
+      name: Check YAML
+      stages: [pre-commit]
+    # - id: check-json
+    #   name: Check JSON
+    - id: end-of-file-fixer
+      name: Check End of Files
+      stages: [pre-commit]
+    - id: trailing-whitespace
+      name: Check Trailing Whitespace
+      stages: [pre-commit]
+      args: [
+        --markdown-linebreak-ext=.md
+      ]
+    - id: check-merge-conflict
+      name: Check for Merge Conflicts
+      stages: [pre-commit]
+    - id: detect-private-key
+      name: Check Private Keys
+      stages: [pre-commit]
+
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: 0.28.2
+  hooks:
+    # - id: check-github-actions
+    #   name: Check GitHub Actions
+    #   args: ["--verbose"]
+    - id: check-github-workflows
+      name: Check GitHub Workflows
+      stages: [pre-commit]
+      args: ["--verbose"]
+
+- repo: local
+  hooks:
+    - id: trufflehog
+      name: Check TruffleHog
+      entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail --no-update'
+      language: system
+      stages: ["pre-commit", "push"]
