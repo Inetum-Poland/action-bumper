@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env sh
+
+# https://github.com/fsaintjacques/semver-tool/tree/master
+
 set -e
 
 if [ -n "${GITHUB_WORKSPACE}" ]; then
@@ -6,19 +9,32 @@ if [ -n "${GITHUB_WORKSPACE}" ]; then
   cd "${GITHUB_WORKSPACE}" || exit
 fi
 
+# --- functions ---------------------------------------------------------------
+
 # Setup these env variables. It can exit 0 for unknown label.
 # - LABELS
 # - PR_NUMBER
 # - PR_TITLE
 setup_from_labeled_event() {
   label=$(jq -r '.label.name' < "${GITHUB_EVENT_PATH}")
-  if echo "${label}" | grep "^bump:" ; then
+
+  if echo "${label}" | grep ${INPUT_BUMP_MAJOR} ; then
     echo "Found label=${label}" >&2
-    LABELS="${label}"
+    LABELS="${INPUT_BUMP_MAJOR}"
+  elif echo "${label}" | grep ${INPUT_BUMP_MINOR} ; then
+    echo "Found label=${label}" >&2
+    LABELS="${INPUT_BUMP_MINOR}"
+  elif echo "${label}" | grep ${INPUT_BUMP_PATCH} ; then
+    echo "Found label=${label}" >&2
+    LABELS="${INPUT_BUMP_PATCH}"
+  elif echo "${label}" | grep ${INPUT_BUMP_NONE} ; then
+    echo "Found label=${label}" >&2
+    LABELS="${INPUT_BUMP_NONE}"
   else
-    echo "Attached label name does not match with 'bump:'. label=${label}" >&2
+    echo "Attached label name does not match with configured labels. label=${label}" >&2
     exit 0
   fi
+
   PR_NUMBER=$(jq -r '.pull_request.number' < "${GITHUB_EVENT_PATH}")
   PR_TITLE=$(jq -r '.pull_request.title' < "${GITHUB_EVENT_PATH}")
 }
@@ -36,6 +52,7 @@ setup_from_push_event() {
 
 list_pulls() {
   pulls_endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc"
+
   if [ -n "${INPUT_GITHUB_TOKEN}" ]; then
     curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${pulls_endpoint}"
   else
@@ -44,16 +61,22 @@ list_pulls() {
   fi
 }
 
+# --- statuses ----------------------------------------------------------------
+
 post_pre_status() {
   head_label="$(jq -r '.pull_request.head.label' < "${GITHUB_EVENT_PATH}" )"
   compare=""
+
   if [ -n "${CURRENT_VERSION}" ]; then
     compare="**Changes**:[${CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${CURRENT_VERSION}...${head_label})"
   fi
+
   post_txt="🏷️ [[bumpr]](https://github.com/haya14busa/action-bumpr)
 **Next version**:${NEXT_VERSION}
 ${compare}"
+
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
+
   if [ "${FROM_FORK}" = "true" ]; then
     post_warning "${post_txt}"
   else
@@ -63,9 +86,11 @@ ${compare}"
 
 post_post_status() {
   compare=""
+
   if [ -n "${CURRENT_VERSION}" ]; then
     compare="**Changes**:[${CURRENT_VERSION}...${NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${CURRENT_VERSION}...${NEXT_VERSION})"
   fi
+
   post_txt="🚀 [[bumpr]](https://github.com/haya14busa/action-bumpr) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
 **New version**:[${NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${NEXT_VERSION})
 ${compare}
@@ -78,6 +103,7 @@ ${compare}
 post_comment() {
   body_text="$1"
   endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments"
+
   # Do not quote body_text for multiline comments.
   body="$(echo ${body_text} | jq -ncR '{body: input}')"
   curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
@@ -88,8 +114,11 @@ post_warning() {
   echo "::warning ::${body_text}"
 }
 
+# --- main --------------------------------------------------------------------
+
 # Get labels and Pull Request data.
 ACTION=$(jq -r '.action' < "${GITHUB_EVENT_PATH}" )
+
 if [ "${ACTION}" = "labeled" ]; then
   setup_from_labeled_event
 else
@@ -97,16 +126,25 @@ else
 fi
 
 BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
-if echo "${LABELS}" | grep "bump:major" ; then
+
+if echo "${LABELS}" | grep "${INPUT_BUMP_MAJOR}" ; then
   BUMP_LEVEL="major"
-elif echo "${LABELS}" | grep "bump:minor" ; then
+elif echo "${LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
   BUMP_LEVEL="minor"
-elif echo "${LABELS}" | grep "bump:patch" ; then
+elif echo "${LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
   BUMP_LEVEL="patch"
+elif echo "${LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
+  BUMP_LEVEL="none"
 fi
 
-if [ -z "${BUMP_LEVEL}" ]; then
-  echo "PR with labels for bump not found. Do nothing."
+if [ -z "${BUMP_LEVEL}" || "${BUMP_LEVEL}" = "none" ]; then
+  echo "PR with labels for bump not found or bump level is 'none'. Do nothing."
+
+  if [ -z "${BUMP_LEVEL}" && "${INPUT_FAIL_IF_NO_BUMP}" = "true" ]; then
+    echo "PR fails as no bump label is found."
+    exit 1
+  fi
+
   echo "skip=true" >> "$GITHUB_OUTPUT"
   exit
 fi
@@ -117,12 +155,13 @@ echo "Bump ${BUMP_LEVEL} version"
 if "$(git rev-parse --is-shallow-repository)"; then
   # the repository is shallowed, so we need to fetch all history.
   git fetch --tags -f # Fetch existing tags before bump.
+
   # Fetch history as well because bump uses git history (git tag --merged).
   git fetch --prune --unshallow
 fi
 
-CURRENT_VERSION="$(bump current)" || true
-NEXT_VERSION="$(bump ${BUMP_LEVEL})" || true
+CURRENT_VERSION="$(git describe --abbrev=0 --tags)" || true
+NEXT_VERSION="v$(semver bump ${BUMP_LEVEL} ${CURRENT_VERSION})" || true
 
 # Set next version tag in case existing tags not found.
 if [ -z "${NEXT_VERSION}" ] && [ -z "$(git tag)" ]; then
@@ -143,6 +182,13 @@ if [ -z "${NEXT_VERSION}" ]; then
   echo "Cannot find next version."
   exit 1
 fi
+
+# Remove 'v' prefix if variable is false casted from string
+
+if [ "${INPUT_INCLUDE_V}" = "false" ]; then
+  NEXT_VERSION=$(echo "$NEXT_VERSION" | sed 's/^v//')
+fi
+
 echo "current_version=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
 echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -168,12 +214,21 @@ else
   git tag -a "${NEXT_VERSION}" -m "${TAG_MESSAGE}"
 
   if [ -n "${INPUT_GITHUB_TOKEN}" ]; then
-    bare_server_url=$(echo "${GITHUB_SERVER_URL}" | sed 's#^.\+://##')
-    git -c "http.${GITHUB_SERVER_URL}/.extraheader=" \
-      push "https://x-access-token:${INPUT_GITHUB_TOKEN}@${bare_server_url}/${GITHUB_REPOSITORY}.git" \
-      "${NEXT_VERSION}"
-  else
-    git push origin "${NEXT_VERSION}"
+    git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+  fi
+
+  git push origin "${NEXT_VERSION}"
+
+  if [ ${INPUT_BUMP_SEMVER} = "true" && "${GITHUB_REF}" != "${TAG}" ]; then
+    PATCH="${NEXT_VERSION}" # v1.2.3
+    MINOR="${PATCH%.*}"     # v1.2
+    MAJOR="${MINOR%.*}"     # v1
+
+    git tag -fa "${MINOR}" -m "${TAG_MESSAGE}"
+    git push --force origin "${MINOR}"
+
+    git tag -fa "${MAJOR}" -m "${TAG_MESSAGE}"
+    git push --force origin "${MAJOR}"
   fi
 
   # Post post-bumpr status on merge.

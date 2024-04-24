@@ -1,4 +1,3 @@
-name: release
 on:
   push:
     # Use push on master event to run workflow instead of pull_request

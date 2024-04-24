@@ -1,48 +1,34 @@
-# action-bumpr
+# action-bumper
 
-**action-bumpr** bumps semantic version tag on merging Pull Requests with
-specific labels (`bump:major`,`bump:minor`,`bump:patch`).
+_Original project: [action-bumpr](https://github.com/haya14busa/action-bumpr)._
 
-![action-bumpr image](https://user-images.githubusercontent.com/3797062/72686834-dc19a980-3b3b-11ea-9a25-3c5be36d45b1.png)
-
-[![Test](https://github.com/haya14busa/action-bumpr/workflows/Test/badge.svg)](https://github.com/haya14busa/action-bumpr/actions?query=workflow%3ATest)
-[![reviewdog](https://github.com/haya14busa/action-bumpr/workflows/reviewdog/badge.svg)](https://github.com/haya14busa/action-bumpr/actions?query=workflow%3Areviewdog)
-[![release](https://github.com/haya14busa/action-bumpr/workflows/release/badge.svg)](https://github.com/haya14busa/action-bumpr/actions?query=workflow%3Arelease)
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/haya14busa/action-bumpr?logo=github&sort=semver)](https://github.com/haya14busa/action-bumpr/releases)
-[![action-bumpr supported](https://img.shields.io/badge/bumpr-supported-ff69b4?logo=github&link=https://github.com/haya14busa/action-bumpr)](https://github.com/haya14busa/action-bumpr)
-
-[![example](https://user-images.githubusercontent.com/3797062/81489783-edd2b880-92b4-11ea-84d5-ea54f3b3fb16.png)](https://github.com/haya14busa/action-bumpr/pull/18)
+**action-bumper** bumps semantic version tag on merging Pull Requests with specific labels (`bumper:major`,`bumper:minor`,`bumper:patch`, `bumper:none`).
 
 ## Input
 
-```yaml
-inputs:
-  default_bump_level:
-    description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty"
-    required: false
-  dry_run:
-    description: "Do not actually tag next version if it's true"
-    required: false
-  github_token:
-    description: 'GITHUB_TOKEN to list pull requests and create tags'
-    default: '${{ github.token }}'
-    required: true
-  tag_as_user:
-    description: "Name to use when creating tags"
-    required: false
-  tag_as_email:
-    description: "Email address to use when creating tags"
-    required: false
-outputs:
-  current_version:
-    description: "current version"
-  next_version:
-    description: "next version"
-  skip:
-    description: "True if release is skipped. e.g. No labels attached to PR."
-  message:
-    description: "Tag message"
-```
+| Name               | Description                                                                                                       | Default             | Required |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
+| default_bump_level | Default bump level if labels are not attached [major, minor, patch, none]. Do nothing if it's empty               |                     | false    |
+| dry_run            | Do not actually tag next version if it's true                                                                     |                     | false    |
+| github_token       | GITHUB_TOKEN to list pull requests and create tags                                                                | ${{ github.token }} | true     |
+| tag_as_user        | Name to use when creating tags                                                                                    |                     | false    |
+| tag_as_email       | Email address to use when creating tags                                                                           |                     | false    |
+| bump_major         | Label name for major bump (bump:major)                                                                            | bumper:major        | false    |
+| bump_minor         | Label name for minor bump (bump:minor)                                                                            | bumper:minor        | false    |
+| bump_patch         | Label name for patch bump (bump:patch)                                                                            | bumper:patch        | false    |
+| bump_none          | Label name for no bump (bump:none)                                                                                | bumper:none         | false    |
+| fail_if_no_bump    | Fail if no bump label is found                                                                                    | false               | false    |
+| bump_semver        | Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3` | false               | false    |
+| include_v          | Include `v` prefix in tag                                                                                          | true                | false    |
+
+## Output
+
+| Name            | Description                                                |
+| --------------- | ---------------------------------------------------------- |
+| current_version | current version                                            |
+| next_version    | next version                                               |
+| skip            | True if release is skipped. e.g. No labels attached to PR. |
+| message         | Tag message                                                |
 
 ## Usage
 
@@ -65,18 +51,14 @@ jobs:
       - uses: actions/checkout@v4
       # Bump version on merging Pull Requests with specific labels.
       # (bump:major,bump:minor,bump:patch)
-      - uses: haya14busa/action-bumpr@v1
+      - uses: inetum-poland/action-bumper@v1
 ```
 
 ### Integrate with other release related actions.
 
-Integrate with
-[haya14busa/action-update-semver](https://github.com/haya14busa/action-update-semver)
-to update major and minor tags on semantic version tag release (e.g. update v1
-and v1.2 tag on v1.2.3 release).
+Integrate with [inetum-poland/action-update-semver](https://github.com/inetum-poland/action-update-semver) to update major and minor tags on semantic version tag release (e.g. update v1 and v1.2 tag on v1.2.3 release).
 
 ```yaml
-name: release
 on:
   push:
     branches:
@@ -95,34 +77,21 @@ jobs:
       - uses: actions/checkout@v4
 
       # Bump version on merging Pull Requests with specific labels.
-      # (bump:major,bump:minor,bump:patch)
-      - id: bumpr
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        uses: haya14busa/action-bumpr@v1
-
-      # Update corresponding major and minor tag.
-      # e.g. Update v1 and v1.2 when releasing v1.2.3
-      - uses: haya14busa/action-update-semver@v1
-        if: "!steps.bumpr.outputs.skip"
+      # (bumper:major, bumper:minor, bumper:patch, bumper:none)
+      - id: bumper
+        uses: inetum-poland/action-bumper@v1
         with:
-          github_token: ${{ secrets.github_token }}
-          tag: ${{ steps.bumpr.outputs.next_version }}
+          fail_if_no_bump: true
+
   release-check:
     if: github.event.action == 'labeled'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Post bumpr status comment
-        uses: haya14busa/action-bumpr@v1
-```
-
-### Badge
-
-```md
-[![action-bumpr supported](https://img.shields.io/badge/bumpr-supported-ff69b4?logo=github&link=https://github.com/haya14busa/action-bumpr)](https://github.com/haya14busa/action-bumpr)
+      - name: Post bumper status comment
+        uses: inetum-poland/action-bumper@v1
 ```
 
 ### Note
-action-bumpr uses push on master event to run workflow instead of pull_request
-closed (merged) event because github token doesn't have write permission
-for pull_request from fork repository.
+
+action-bumper uses push on master event to run workflow instead of pull_request closed (merged) event because github token doesn't have write permission for pull_request from fork repository.
