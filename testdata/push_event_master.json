@@ -1,12 +1,31 @@
 {
-  "after": "88455201b3772bf6d0c8d5899b07b32ffa508cde",
+  "after": "8e9cb85d9790cf78130498cbe0214f179cc2df00",
   "base_ref": null,
-  "before": "267057b2f551e1930991bbc4dd3512a73f7c5d25",
-  "commits": [],
-  "compare": "https://github.com/Inetum-Poland/action-bumper/compare/267057b2f551...88455201b377",
+  "before": "4976b8443bcba75eac7d60e53210adc09276d307",
+  "commits": [
+    {
+      "author": {
+        "email": "amadeusz.kryze@pm.me",
+        "name": "Aam",
+        "username": "aamkye"
+      },
+      "committer": {
+        "email": "amadeusz.kryze@pm.me",
+        "name": "Aam",
+        "username": "aamkye"
+      },
+      "distinct": true,
+      "id": "8e9cb85d9790cf78130498cbe0214f179cc2df00",
+      "message": "fix(bumper): use the right operator for jq",
+      "timestamp": "2024-04-26T00:44:03+02:00",
+      "tree_id": "eeb49ee12a6a8ed40af0cae330496d317a68a064",
+      "url": "https://github.com/Inetum-Poland/action-bumper/commit/8e9cb85d9790cf78130498cbe0214f179cc2df00"
+    }
+  ],
+  "compare": "https://github.com/Inetum-Poland/action-bumper/compare/4976b8443bcb...8e9cb85d9790",
   "created": false,
   "deleted": false,
-  "forced": true,
+  "forced": false,
   "head_commit": {
     "author": {
       "email": "amadeusz.kryze@pm.me",
@@ -19,11 +38,11 @@
       "username": "aamkye"
     },
     "distinct": true,
-    "id": "88455201b3772bf6d0c8d5899b07b32ffa508cde",
-    "message": "chore(gha): update the branch names",
-    "timestamp": "2024-04-24T23:56:56+02:00",
-    "tree_id": "fd083649033bffbe4cedb459fb90455fb26d1e65",
-    "url": "https://github.com/Inetum-Poland/action-bumper/commit/88455201b3772bf6d0c8d5899b07b32ffa508cde"
+    "id": "8e9cb85d9790cf78130498cbe0214f179cc2df00",
+    "message": "fix(bumper): use the right operator for jq",
+    "timestamp": "2024-04-26T00:44:03+02:00",
+    "tree_id": "eeb49ee12a6a8ed40af0cae330496d317a68a064",
+    "url": "https://github.com/Inetum-Poland/action-bumper/commit/8e9cb85d9790cf78130498cbe0214f179cc2df00"
   },
   "organization": {
     "avatar_url": "https://avatars.githubusercontent.com/u/133872603?v=4",
@@ -43,7 +62,7 @@
     "email": "amadeusz.kryze@pm.me",
     "name": "aamkye"
   },
-  "ref": "refs/heads/master",
+  "ref": "refs/heads/main",
   "repository": {
     "allow_forking": true,
     "archive_url": "https://api.github.com/repos/Inetum-Poland/action-bumper/{archive_format}{/ref}",
@@ -136,9 +155,9 @@
     },
     "private": false,
     "pulls_url": "https://api.github.com/repos/Inetum-Poland/action-bumper/pulls{/number}",
-    "pushed_at": 1713995818,
+    "pushed_at": 1714085048,
     "releases_url": "https://api.github.com/repos/Inetum-Poland/action-bumper/releases{/id}",
-    "size": 0,
+    "size": 84,
     "ssh_url": "git@github.com:Inetum-Poland/action-bumper.git",
     "stargazers": 0,
     "stargazers_count": 0,
@@ -159,7 +178,7 @@
       "tags"
     ],
     "trees_url": "https://api.github.com/repos/Inetum-Poland/action-bumper/git/trees{/sha}",
-    "updated_at": "2024-04-24T21:40:31Z",
+    "updated_at": "2024-04-25T22:41:13Z",
     "url": "https://github.com/Inetum-Poland/action-bumper",
     "visibility": "public",
     "watchers": 0,
