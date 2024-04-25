@@ -86,40 +86,20 @@ post_warning() {
   echo "::warning ::${body_text}"
 }
 
-# --- functions for labeled event ---------------------------------------------
+# --- functions for pr event --------------------------------------------------
 
 # Get label name from the pull request.
-setup_labels_from_labeled_event() {
-  label=$(jq -r '.label.name' < "${GITHUB_EVENT_PATH}")
-  local LABELS=
-
-  if echo "${label}" | grep "${INPUT_BUMP_MAJOR}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_MAJOR}"
-  elif echo "${label}" | grep "${INPUT_BUMP_MINOR}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_MINOR}"
-  elif echo "${label}" | grep "${INPUT_BUMP_PATCH}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_PATCH}"
-  elif echo "${label}" | grep "${INPUT_BUMP_NONE}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_NONE}"
-  else
-    echo "Attached label name does not match with configured labels. label=${label}" >&2
-    exit 0
-  fi
-
-  echo "${LABELS}"
+setup_labels_from_pr_event() {
+  jq -r '.pull_request.labels[].name' < "${GITHUB_EVENT_PATH}" | tr '\n' ' '
 }
 
 # Get number from the pull request.
-setup_pr_number_from_labeled_event() {
+setup_pr_number_from_pr_event() {
   jq -r '.pull_request.number' < "${GITHUB_EVENT_PATH}"
 }
 
 # Get title from the pull request.
-setup_pr_title_from_labeled_event() {
+setup_pr_title_from_pr_event() {
   jq -r '.pull_request.title' < "${GITHUB_EVENT_PATH}"
 }
 
@@ -189,14 +169,14 @@ git_shallow_repo() {
 
 # Setup the necessary variables based on the GitHub event.
 setup_vars() {
-  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
-    PR_NUMBER=$(setup_pr_number_from_labeled_event)
-    PR_TITLE=$(setup_pr_title_from_labeled_event)
-    LABELS=$(setup_labels_from_labeled_event)
+  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+    PR_NUMBER=$(setup_pr_number_from_pr_event)
+    PR_TITLE=$(setup_pr_title_from_pr_event)
+    BUMPER_LABELS=$(setup_labels_from_pr_event)
   elif [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
     PR_NUMBER=$(setup_pr_number_from_push_event)
     PR_TITLE=$(setup_pr_title_from_push_event)
-    LABELS=$(setup_labels_from_push_event)
+    BUMPER_LABELS=$(setup_labels_from_push_event)
   fi
 
   if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MAJOR}" ; then
@@ -212,7 +192,11 @@ setup_vars() {
 
 setup_git_tag() {
   BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
-  BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
+  if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
+    BUMPER_CURRENT_VERSION="$(git describe --tags --abbrev=0)"
+  else
+    BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
+  fi
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     echo "current_version=${BUMPER_CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
@@ -300,8 +284,12 @@ make_and_push_tag() {
 
 setup_git_config() {
   # Set up Git.
-  git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
-  git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
+  if [[ "${INPUT_DRY_RUN}" == "true" || -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    true
+  else
+    git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
+    git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
+  fi
 }
 
 bump_semver_tags() {
@@ -330,7 +318,7 @@ make_and_push_semver_tags() {
 
 PR_NUMBER=
 PR_TITLE=
-LABELS=
+BUMPER_LABELS=
 BUMPER_CURRENT_VERSION=
 BUMPER_BUMP_LEVEL=
 BUMPER_NEXT_VERSION=
