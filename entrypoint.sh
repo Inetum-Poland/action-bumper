@@ -356,7 +356,7 @@ main() {
     bump_semver_tags
     remove_v_prefix
     make_and_push_semver_tags
-  elif ! [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/" ]]; then
+  else
     setup_vars
     bump_tag
     check_missing_tags
