@@ -288,10 +288,6 @@ make_and_push_tag() {
     exit 0
   fi
 
-  # Set up Git.
-  git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
-  git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
-
   # Push the next tag.
   git tag -a "${BUMPER_NEXT_VERSION}" -m "${TAG_MESSAGE}"
 
@@ -300,6 +296,12 @@ make_and_push_tag() {
   fi
 
   git push origin "${BUMPER_NEXT_VERSION}"
+}
+
+setup_git_config() {
+  # Set up Git.
+  git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
+  git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
 }
 
 bump_semver_tags() {
@@ -348,6 +350,7 @@ main() {
   init_debug
   git_shallow_repo
   setup_git_tag
+  setup_git_config
 
   if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
     bump_semver_tags
