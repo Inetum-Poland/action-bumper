@@ -352,7 +352,7 @@ main() {
   setup_git_tag
   setup_git_config
 
-  if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
+  if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" && ${INPUT_BUMP_SEMVER} == "true" ]]; then
     bump_semver_tags
     remove_v_prefix
     make_and_push_semver_tags

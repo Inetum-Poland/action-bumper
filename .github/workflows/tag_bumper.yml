@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  tag_bumper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: bumper
+        uses: ./
+        with:
+          fail_if_no_bump: true
+          bump_semver: true
