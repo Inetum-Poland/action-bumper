@@ -193,7 +193,7 @@ setup_vars() {
 setup_git_tag() {
   BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
   if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
-    BUMPER_CURRENT_VERSION="$(git describe --tags --abbrev=0)"
+    BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?\d+\.\d+\.\d+.*" | sort -V | tail -1)"
   else
     BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
   fi
@@ -350,7 +350,7 @@ main() {
     check_missing_tags
     remove_v_prefix
 
-    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
+    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
       post_pre_status
     else
       make_and_push_tag
