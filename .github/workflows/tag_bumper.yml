@@ -5,6 +5,12 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - labeled
+      - unlabeled
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   tag_bumper:
