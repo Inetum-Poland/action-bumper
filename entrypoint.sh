@@ -18,7 +18,7 @@ fi
 init_debug() {
   # For debugging.
   if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
-    GITHUB_EVENT_PATH=$(cat "${DEBUG_GITHUB_EVENT_PATH}")
+    GITHUB_EVENT_PATH="${DEBUG_GITHUB_EVENT_PATH}"
     # shellcheck disable=SC1091
     source .input.env
   fi
@@ -28,7 +28,7 @@ init_debug() {
 
 # Prepare and post a status.
 post_pre_status() {
-  head_label="$(jq -r '.pull_request.head.label' <<< "${GITHUB_EVENT_PATH}" )"
+  head_label="$(jq -r '.pull_request.head.label' < "${GITHUB_EVENT_PATH}" )"
   compare=""
 
   if [[ -n "${BUMPER_CURRENT_VERSION}" ]]; then
@@ -42,7 +42,7 @@ ${compare}
 EOF
 )
 
-  FROM_FORK=$(jq -r '.pull_request.head.repo.fork' <<< "${GITHUB_EVENT_PATH}")
+  FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
 
   if [[ "${FROM_FORK}" == "true" ]]; then
     post_warning "${post_txt}"
@@ -76,7 +76,7 @@ post_comment() {
 
   # Do not quote body_text for multiline comments.
   # shellcheck disable=SC2086
-  body="$(jq -ncR '{body: input}' <<< ${body_text})"
+  body="$(jq -ncR '{body: input}' < ${body_text})"
   curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
 }
 
@@ -90,7 +90,7 @@ post_warning() {
 
 # Get label name from the pull request.
 setup_labels_from_labeled_event() {
-  label=$(jq -r '.label.name' <<< "${GITHUB_EVENT_PATH}")
+  label=$(jq -r '.label.name' < "${GITHUB_EVENT_PATH}")
   local LABELS=
 
   if echo "${label}" | grep "${INPUT_BUMP_MAJOR}" ; then
@@ -115,12 +115,12 @@ setup_labels_from_labeled_event() {
 
 # Get number from the pull request.
 setup_pr_number_from_labeled_event() {
-  jq -r '.pull_request.number' <<< "${GITHUB_EVENT_PATH}"
+  jq -r '.pull_request.number' < "${GITHUB_EVENT_PATH}"
 }
 
 # Get title from the pull request.
 setup_pr_title_from_labeled_event() {
-  jq -r '.pull_request.title' <<< "${GITHUB_EVENT_PATH}"
+  jq -r '.pull_request.title' < "${GITHUB_EVENT_PATH}"
 }
 
 # --- functions for push event ------------------------------------------------
@@ -140,19 +140,19 @@ list_pulls() {
 # Get labels from the pull request.
 setup_labels_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq '.labels | .[].name' <<< "${pull_request}"
+  jq '.labels | .[].name' < "${pull_request}"
 }
 
 # Get number from the pull request.
 setup_pr_number_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq -r .number <<< "${pull_request}"
+  jq -r .number < "${pull_request}"
 }
 
 # Get title from the pull request.
 setup_pr_title_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq -r .title <<< "${pull_request}"
+  jq -r .title < "${pull_request}"
 }
 
 # --- helper functions --------------------------------------------------------
@@ -189,11 +189,11 @@ git_shallow_repo() {
 
 # Setup the necessary variables based on the GitHub event.
 setup_vars() {
-  if [[ $(jq -r '.action' <<< "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
+  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
     PR_NUMBER=$(setup_pr_number_from_labeled_event)
     PR_TITLE=$(setup_pr_title_from_labeled_event)
     LABELS=$(setup_labels_from_labeled_event)
-  elif [[ $(jq -r '.ref' <<< "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
+  elif [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
     PR_NUMBER=$(setup_pr_number_from_push_event)
     PR_TITLE=$(setup_pr_title_from_push_event)
     LABELS=$(setup_labels_from_push_event)
@@ -211,7 +211,7 @@ setup_vars() {
 }
 
 setup_git_tag() {
-  BUMPER_CURRENT_VERSION="$(jq -r '.ref' <<< "${GITHUB_EVENT_PATH}")"
+  BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
   BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
@@ -342,24 +342,24 @@ main() {
   semver_check
 
   if [[ -n "${GITHUB_EVENT_PATH}" ]]; then
-    jq <<< "${GITHUB_EVENT_PATH}"
+    cat "${GITHUB_EVENT_PATH}"
   fi
 
   init_debug
   git_shallow_repo
   setup_git_tag
 
-  if [[ $(jq -r '.ref' <<< "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
+  if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
     bump_semver_tags
     remove_v_prefix
     make_and_push_semver_tags
-  elif ! [[ $(jq -r '.ref' <<< "${GITHUB_EVENT_PATH}") =~ "refs/" ]]; then
+  elif ! [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/" ]]; then
     setup_vars
     bump_tag
     check_missing_tags
     remove_v_prefix
 
-    if [[ $(jq -r '.action' <<< "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
+    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
       post_pre_status
     else
       make_and_push_tag
