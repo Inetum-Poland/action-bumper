@@ -3,6 +3,7 @@
 # https://github.com/fsaintjacques/semver-tool/tree/master
 
 set -ex
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 
 # --- set safe directory ------------------------------------------------------
 
