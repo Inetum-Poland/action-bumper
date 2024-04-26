@@ -193,7 +193,7 @@ setup_vars() {
 setup_git_tag() {
   BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
   if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
-    BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?\d+\.\d+\.\d+.*" | sort -V | tail -1)"
+    BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?[0-9]+\.[0-9]+\.[0-9]+.*" | sort -V | tail -1)"
   else
     BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
   fi
