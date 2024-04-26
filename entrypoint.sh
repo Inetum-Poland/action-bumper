@@ -35,12 +35,7 @@ post_pre_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${head_label})"
   fi
 
-  post_txt=$(cat <<EOF
-🏷️ [[bumpr]](https://github.com/haya14busa/action-bumpr)
-**Next version**:${BUMPER_NEXT_VERSION}
-${compare}
-EOF
-)
+  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper)<br>**Next version**: ${BUMPER_NEXT_VERSION}<br>${compare}"
 
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
 
@@ -59,12 +54,7 @@ post_post_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION})"
   fi
 
-  post_txt=$(cat <<EOF
-🚀 [[bumpr]](https://github.com/haya14busa/action-bumpr) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
-**New version**:[${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})
-${compare}
-EOF
-)
+  post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})<br>**New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})<br>${compare}"
 
   post_comment "${post_txt}"
 }
@@ -73,11 +63,19 @@ EOF
 post_comment() {
   body_text="$1"
   endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments"
+  update_endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/comments/"
 
-  # Do not quote body_text for multiline comments.
-  # shellcheck disable=SC2086
-  body="$(jq -ncR '{body: input}' < ${body_text})"
-  curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
+  body="$(echo -e "${body_text}" | jq -ncR "{body: input}")"
+
+  # check if the comment has been already posted
+  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r '.[] | select((.body | contains("action-bumper")) and (.user.login == "github-actions[bot]") and (.user.type == "Bot")) | .id')
+
+  if [[ -n "${comment_id}" ]]; then
+    # comment already posted, update it
+    curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -X PATCH -d "${body}" "${update_endpoint}${comment_id}"
+  else
+    curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
+  fi
 }
 
 # Post a warning comment.
@@ -86,40 +84,20 @@ post_warning() {
   echo "::warning ::${body_text}"
 }
 
-# --- functions for labeled event ---------------------------------------------
+# --- functions for pr event --------------------------------------------------
 
 # Get label name from the pull request.
-setup_labels_from_labeled_event() {
-  label=$(jq -r '.label.name' < "${GITHUB_EVENT_PATH}")
-  local LABELS=
-
-  if echo "${label}" | grep "${INPUT_BUMP_MAJOR}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_MAJOR}"
-  elif echo "${label}" | grep "${INPUT_BUMP_MINOR}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_MINOR}"
-  elif echo "${label}" | grep "${INPUT_BUMP_PATCH}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_PATCH}"
-  elif echo "${label}" | grep "${INPUT_BUMP_NONE}" ; then
-    echo "Found label=${label}" >&2
-    LABELS="${INPUT_BUMP_NONE}"
-  else
-    echo "Attached label name does not match with configured labels. label=${label}" >&2
-    exit 0
-  fi
-
-  echo "${LABELS}"
+setup_labels_from_pr_event() {
+  jq -r '.pull_request.labels[].name' < "${GITHUB_EVENT_PATH}" | tr '\n' ' '
 }
 
 # Get number from the pull request.
-setup_pr_number_from_labeled_event() {
+setup_pr_number_from_pr_event() {
   jq -r '.pull_request.number' < "${GITHUB_EVENT_PATH}"
 }
 
 # Get title from the pull request.
-setup_pr_title_from_labeled_event() {
+setup_pr_title_from_pr_event() {
   jq -r '.pull_request.title' < "${GITHUB_EVENT_PATH}"
 }
 
@@ -189,36 +167,46 @@ git_shallow_repo() {
 
 # Setup the necessary variables based on the GitHub event.
 setup_vars() {
-  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
-    PR_NUMBER=$(setup_pr_number_from_labeled_event)
-    PR_TITLE=$(setup_pr_title_from_labeled_event)
-    LABELS=$(setup_labels_from_labeled_event)
+  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+    PR_NUMBER=$(setup_pr_number_from_pr_event)
+    PR_TITLE=$(setup_pr_title_from_pr_event)
+    BUMPER_LABELS=$(setup_labels_from_pr_event)
   elif [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
     PR_NUMBER=$(setup_pr_number_from_push_event)
     PR_TITLE=$(setup_pr_title_from_push_event)
-    LABELS=$(setup_labels_from_push_event)
+    BUMPER_LABELS=$(setup_labels_from_push_event)
+  fi
+
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
+    BUMPER_BUMP_LEVEL="none"
+  fi
+
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
+    BUMPER_BUMP_LEVEL="patch"
+  fi
+
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
+    BUMPER_BUMP_LEVEL="minor"
   fi
 
   if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MAJOR}" ; then
     BUMPER_BUMP_LEVEL="major"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
-    BUMPER_BUMP_LEVEL="minor"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
-    BUMPER_BUMP_LEVEL="patch"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
-    BUMPER_BUMP_LEVEL="none"
   fi
 }
 
+# A function that processes the current version to determine the next version and generate a tag message.
 setup_git_tag() {
   BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
-  BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
+  if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
+    BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?[0-9]+\.[0-9]+\.[0-9]+.*" | sort -V | tail -1)"
+  else
+    BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
+  fi
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     echo "current_version=${BUMPER_CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
   fi
 
-  # shellcheck disable=SC2086
   BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
 }
 
@@ -298,12 +286,18 @@ make_and_push_tag() {
   git push origin "${BUMPER_NEXT_VERSION}"
 }
 
+# Set up Git config.
 setup_git_config() {
   # Set up Git.
-  git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
-  git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
+  if [[ "${INPUT_DRY_RUN}" == "true" || -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    true
+  else
+    git config user.name "${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}"
+    git config user.email "${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}"
+  fi
 }
 
+# Semver update for tags.
 bump_semver_tags() {
   PATCH="${BUMPER_CURRENT_VERSION}" # v1.2.3
   MINOR="${PATCH%.*}"               # v1.2
@@ -330,7 +324,7 @@ make_and_push_semver_tags() {
 
 PR_NUMBER=
 PR_TITLE=
-LABELS=
+BUMPER_LABELS=
 BUMPER_CURRENT_VERSION=
 BUMPER_BUMP_LEVEL=
 BUMPER_NEXT_VERSION=
@@ -356,13 +350,13 @@ main() {
     bump_semver_tags
     remove_v_prefix
     make_and_push_semver_tags
-  elif ! [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/" ]]; then
+  else
     setup_vars
     bump_tag
     check_missing_tags
     remove_v_prefix
 
-    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") == "labeled" ]]; then
+    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
       post_pre_status
     else
       make_and_push_tag
@@ -374,3 +368,5 @@ main() {
 }
 
 main
+
+# TEST
