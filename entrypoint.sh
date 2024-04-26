@@ -177,14 +177,20 @@ setup_vars() {
     BUMPER_LABELS=$(setup_labels_from_push_event)
   fi
 
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
+    BUMPER_BUMP_LEVEL="none"
+  fi
+
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
+    BUMPER_BUMP_LEVEL="patch"
+  fi
+
+  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
+    BUMPER_BUMP_LEVEL="minor"
+  fi
+
   if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MAJOR}" ; then
     BUMPER_BUMP_LEVEL="major"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
-    BUMPER_BUMP_LEVEL="minor"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
-    BUMPER_BUMP_LEVEL="patch"
-  elif echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
-    BUMPER_BUMP_LEVEL="none"
   fi
 }
 
