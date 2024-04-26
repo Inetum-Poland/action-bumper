@@ -35,8 +35,8 @@ post_pre_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${head_label})"
   fi
 
-  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper)\n
-    **Next version**: ${BUMPER_NEXT_VERSION}\n
+  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper)
+    **Next version**: ${BUMPER_NEXT_VERSION}
     ${compare}"
 
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
@@ -56,8 +56,8 @@ post_post_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION})"
   fi
 
-  post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})\n
-    **New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})\n
+  post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+    **New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})
     ${compare}"
 
   post_comment "${post_txt}"
@@ -72,7 +72,7 @@ post_comment() {
   body="$(echo "${body_text}" | jq -ncR "{body: input}")"
 
   # check if the comment has been already posted
-  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r '.[] | select((.body | contains("action-bumper")) and (.user.login == "github-actions") and (.user.type == "Bot")) | .id')
+  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r '.[] | select((.body | contains("action-bumper")) and (.user.login == "github-actions[bot]") and (.user.type == "Bot")) | .id')
 
   if [[ -n "${comment_id}" ]]; then
     # comment already posted, update it
