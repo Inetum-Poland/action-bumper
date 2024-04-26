@@ -171,7 +171,8 @@ setup_vars() {
     PR_NUMBER=$(setup_pr_number_from_pr_event)
     PR_TITLE=$(setup_pr_title_from_pr_event)
     BUMPER_LABELS=$(setup_labels_from_pr_event)
-  elif [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" ]]; then
+    # elif [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/" ]]; then
+  else
     PR_NUMBER=$(setup_pr_number_from_push_event)
     PR_TITLE=$(setup_pr_title_from_push_event)
     BUMPER_LABELS=$(setup_labels_from_push_event)
@@ -196,12 +197,7 @@ setup_vars() {
 
 # A function that processes the current version to determine the next version and generate a tag message.
 setup_git_tag() {
-  BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
-  if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
-    BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?[0-9]+\.[0-9]+\.[0-9]+.*" | sort -V | tail -1)"
-  else
-    BUMPER_CURRENT_VERSION="${BUMPER_CURRENT_VERSION/refs\/tags\//}"
-  fi
+  BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?[0-9]+\.[0-9]+\.[0-9]+.*" | sort -V | tail -1)"
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     echo "current_version=${BUMPER_CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
