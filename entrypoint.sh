@@ -36,8 +36,8 @@ post_pre_status() {
   fi
 
   post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper)
-    **Next version**: ${BUMPER_NEXT_VERSION}
-    ${compare}"
+**Next version**: ${BUMPER_NEXT_VERSION}
+${compare}"
 
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
 
@@ -57,8 +57,8 @@ post_post_status() {
   fi
 
   post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
-    **New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})
-    ${compare}"
+**New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})
+${compare}"
 
   post_comment "${post_txt}"
 }
