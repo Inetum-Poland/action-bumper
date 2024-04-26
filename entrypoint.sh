@@ -194,6 +194,7 @@ setup_vars() {
   fi
 }
 
+# A function that processes the current version to determine the next version and generate a tag message.
 setup_git_tag() {
   BUMPER_CURRENT_VERSION="$(jq -r '.ref' < "${GITHUB_EVENT_PATH}")"
   if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
@@ -206,7 +207,6 @@ setup_git_tag() {
     echo "current_version=${BUMPER_CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
   fi
 
-  # shellcheck disable=SC2086
   BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
 }
 
@@ -286,6 +286,7 @@ make_and_push_tag() {
   git push origin "${BUMPER_NEXT_VERSION}"
 }
 
+# Set up Git config.
 setup_git_config() {
   # Set up Git.
   if [[ "${INPUT_DRY_RUN}" == "true" || -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
@@ -296,6 +297,7 @@ setup_git_config() {
   fi
 }
 
+# Semver update for tags.
 bump_semver_tags() {
   PATCH="${BUMPER_CURRENT_VERSION}" # v1.2.3
   MINOR="${PATCH%.*}"               # v1.2
