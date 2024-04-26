@@ -76,7 +76,7 @@ post_comment() {
 
   # Do not quote body_text for multiline comments.
   # shellcheck disable=SC2086
-  body="$(jq -ncR '{body: input}' < ${body_text})"
+  body="$(echo ${body_text} | jq -ncR '{body: input}')"
   curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
 }
 
