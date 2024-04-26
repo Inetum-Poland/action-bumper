@@ -72,7 +72,7 @@ post_comment() {
   body="$(echo "${body_text}" | jq -ncR "{body: input}")"
 
   # check if the comment has been already posted
-  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r ".[] | select((.body | contains('action-bumper')) && (.user.login == 'github-actions') && (.user.type == 'Bot')) | .id")
+  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r ".[] | select((.body | contains('action-bumper')) and (.user.login == 'github-actions') and (.user.type == 'Bot')) | .id")
 
   if [[ -n "${comment_id}" ]]; then
     # comment already posted, update it
