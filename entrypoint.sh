@@ -118,19 +118,19 @@ list_pulls() {
 # Get labels from the pull request.
 setup_labels_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq '.labels | .[].name' < "${pull_request}"
+  echo "${pull_request}" | jq '.labels | .[].name'
 }
 
 # Get number from the pull request.
 setup_pr_number_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq -r .number < "${pull_request}"
+  echo "${pull_request}" | jq -r .number
 }
 
 # Get title from the pull request.
 setup_pr_title_from_push_event() {
   pull_request="$(list_pulls | jq ".[] | select(.merge_commit_sha==\"${GITHUB_SHA}\")")"
-  jq -r .title < "${pull_request}"
+  echo "${pull_request}" | jq -r .title
 }
 
 # --- helper functions --------------------------------------------------------
