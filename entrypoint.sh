@@ -35,7 +35,7 @@ post_pre_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${head_label})"
   fi
 
-  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper)<br>**Next version**: ${BUMPER_NEXT_VERSION}<br>${compare}"
+  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper) @ ${ACTION}<br>**Next version**: ${BUMPER_NEXT_VERSION}<br>${compare}"
 
   FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
 
@@ -44,6 +44,8 @@ post_pre_status() {
   else
     post_comment "${post_txt}"
   fi
+
+  echo "::notice ::${post_txt}"
 }
 
 # Prepare and post a status.
@@ -57,8 +59,11 @@ post_post_status() {
   post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})<br>**New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})<br>${compare}"
 
   post_comment "${post_txt}"
+
+  echo "::notice ::${post_txt}"
 }
 
+# TODO! opened and labeled are producing two separate comments on the same PR.
 # Post a comment.
 post_comment() {
   body_text="$1"
@@ -68,14 +73,18 @@ post_comment() {
   body="$(echo -e "${body_text}" | jq -ncR "{body: input}")"
 
   # check if the comment has been already posted
-  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r '.[] | select((.body | contains("action-bumper")) and (.user.login == "github-actions[bot]") and (.user.type == "Bot")) | .id')
+  comment_id=$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${endpoint}" | jq -r '.[] | select((.body | contains("action-bumper")) and (.user.login == "github-actions[bot]") and (.user.type == "Bot")) | .id' | sort -V | tail -1)
+
+  output=
 
   if [[ -n "${comment_id}" ]]; then
     # comment already posted, update it
-    curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -X PATCH -d "${body}" "${update_endpoint}${comment_id}"
+    output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -X PATCH -d "${body}" "${update_endpoint}${comment_id}")
   else
-    curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}"
+    output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}")
   fi
+
+  echo "::notice ::$(echo "${output}" | jq -r '.id')"
 }
 
 # Post a warning comment.
@@ -139,7 +148,7 @@ setup_pr_title_from_push_event() {
 semver_check() {
   # Check if semver is installed.
   if ! semver -v &> /dev/null; then
-    echo "semver is not installed." >&2
+    echo "::error ::semver is not installed."
     exit 1
   fi
 }
@@ -148,7 +157,7 @@ semver_check() {
 jq_check() {
   # Check if jq is installed.
   if ! jq -V &> /dev/null; then
-    echo "jq is not installed." >&2
+    echo "::error ::jq is not installed."
     exit 1
   fi
 }
@@ -167,7 +176,7 @@ git_shallow_repo() {
 
 # Setup the necessary variables based on the GitHub event.
 setup_vars() {
-  if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+  if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
     PR_NUMBER=$(setup_pr_number_from_pr_event)
     PR_TITLE=$(setup_pr_title_from_pr_event)
     BUMPER_LABELS=$(setup_labels_from_pr_event)
@@ -210,11 +219,11 @@ setup_git_tag() {
 bump_tag() {
   if [[ -z "${BUMPER_BUMP_LEVEL}" ]]; then
     if [[ "${INPUT_FAIL_IF_NO_BUMP}" == "true" ]]; then
-      echo "PR fails as no bump label is found."
+      echo "::error ::PR fails as no bump label is found."
       exit 1
     fi
 
-    echo "PR with labels for bump not found. Do nothing."
+    echo "::notice ::PR with labels for bump not found. Do nothing."
 
     if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
       echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -318,6 +327,7 @@ make_and_push_semver_tags() {
 
 # --- main --------------------------------------------------------------------
 
+ACTION=
 PR_NUMBER=
 PR_TITLE=
 BUMPER_LABELS=
@@ -336,11 +346,14 @@ main() {
   if [[ -n "${GITHUB_EVENT_PATH}" ]]; then
     cat "${GITHUB_EVENT_PATH}"
   fi
+  ACTION=$(jq -r '.action' < "${GITHUB_EVENT_PATH}")
 
   init_debug
   git_shallow_repo
   setup_git_tag
   setup_git_config
+
+  echo "::notice ::${ACTION}"
 
   if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" && ${INPUT_BUMP_SEMVER} == "true" ]]; then
     bump_semver_tags
@@ -352,7 +365,7 @@ main() {
     check_missing_tags
     remove_v_prefix
 
-    if [[ $(jq -r '.action' < "${GITHUB_EVENT_PATH}") =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+    if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
       post_pre_status
     else
       make_and_push_tag
