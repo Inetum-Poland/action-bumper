@@ -4,7 +4,7 @@
 
 _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), [update-semver](https://github.com/haya14busa/action-update-semver)._
 
-**action-bumper** bumps semantic version tag on merging Pull Requests with specific labels (`bumper:major`,`bumper:minor`,`bumper:patch`, `bumper:none`).
+**action-bumper** bumps semantic version tag on merging Pull Requests with specific labels (`bumper:major`,`bumper:minor`,`bumper:patch`, `bumper:none`), and creates semver tags on tag push.
 
 > [!IMPORTANT]
 > __This repository uses the [Conventional Commits](https://www.conventionalcommits.org/).__
@@ -29,10 +29,10 @@ _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), 
 | github_token       | GITHUB_TOKEN to list pull requests and create tags                                                                | ${{ github.token }} | true     |
 | tag_as_user        | Name to use when creating tags                                                                                    |                     | false    |
 | tag_as_email       | Email address to use when creating tags                                                                           |                     | false    |
-| bump_major         | Label name for major bump (bump:major)                                                                            | bumper:major        | false    |
-| bump_minor         | Label name for minor bump (bump:minor)                                                                            | bumper:minor        | false    |
-| bump_patch         | Label name for patch bump (bump:patch)                                                                            | bumper:patch        | false    |
-| bump_none          | Label name for no bump (bump:none)                                                                                | bumper:none         | false    |
+| bump_major         | Label name for major bump (bumper:major)                                                                          | bumper:major        | false    |
+| bump_minor         | Label name for minor bump (bumper:minor)                                                                          | bumper:minor        | false    |
+| bump_patch         | Label name for patch bump (bumper:patch)                                                                          | bumper:patch        | false    |
+| bump_none          | Label name for no bump (bumper:none)                                                                              | bumper:none         | false    |
 | fail_if_no_bump    | Fail if no bump label is found                                                                                    | false               | false    |
 | bump_semver        | Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3` | false               | false    |
 | include_v          | Include `v` prefix in tag                                                                                          | true                | false    |
@@ -48,64 +48,35 @@ _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), 
 
 ## Usage
 
-### Simple
-
-```yaml
-name: release
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types:
-      - labeled
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # Bump version on merging Pull Requests with specific labels.
-      # (bump:major,bump:minor,bump:patch)
-      - uses: inetum-poland/action-bumper@v1
-```
-
-### Integrate with other release related actions.
-
-Integrate with [inetum-poland/action-update-semver](https://github.com/inetum-poland/action-update-semver) to update major and minor tags on semantic version tag release (e.g. update v1 and v1.2 tag on v1.2.3 release).
-
 ```yaml
 on:
   push:
     branches:
-      - master
+      - main
     tags:
-      - 'v*.*.*'
+      - 'v?*.*.*'
   pull_request:
+    branches:
+      - main
     types:
       - labeled
+      - unlabeled
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
-  release:
-    if: github.event.action != 'labeled'
+  tag_bumper:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       # Bump version on merging Pull Requests with specific labels.
       # (bumper:major, bumper:minor, bumper:patch, bumper:none)
       - id: bumper
-        uses: inetum-poland/action-bumper@v1
+        uses: inetum-poland/action-bumper@v2
         with:
           fail_if_no_bump: true
-
-  release-check:
-    if: github.event.action == 'labeled'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Post bumper status comment
-        uses: inetum-poland/action-bumper@v1
+          bump_semver: true
 ```
 
 ### Note
