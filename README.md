@@ -36,6 +36,7 @@ _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), 
 | fail_if_no_bump    | Fail if no bump label is found                                                                                    | false               | false    |
 | bump_semver        | Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3` | false               | false    |
 | include_v          | Include `v` prefix in tag                                                                                          | true                | false    |
+| add_latest         | Add `latest` tag                                                                                                  | false               | false    |
 
 ## Output
 
@@ -76,7 +77,9 @@ jobs:
         uses: inetum-poland/action-bumper@v2
         with:
           fail_if_no_bump: true
-          bump_semver: true
+          # If you want this to work, you need to add GitHub App token.
+          bump_semver:     true
+          add_latest:      true
 ```
 
 ### Note

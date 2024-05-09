@@ -1,0 +1,16 @@
+{
+  "action": "opened",
+  "number": 1,
+
+  "pull_request": {
+    "head": {
+      "label": "Inetum-Poland:feature/test"
+    },
+
+    "labels": [
+      {
+        "name": "bumper:minor"
+      }
+    ]
+  }
+}

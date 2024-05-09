@@ -2,8 +2,7 @@
 
 # https://github.com/fsaintjacques/semver-tool/tree/master
 
-set -ex
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -e
 
 # --- set safe directory ------------------------------------------------------
 
@@ -17,17 +16,22 @@ fi
 # Initial debug.
 init_debug() {
   # For debugging.
+  if [[ -n "${DEBUG}" && "${DEBUG}" == "true" ]]; then
+    set -x
+    export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+  fi
+
   if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
-    GITHUB_EVENT_PATH="${DEBUG_GITHUB_EVENT_PATH}"
+    GITHUB_EVENT_PATH="${DEBUG_GITHUB_EVENT_PATH}/data.json"
     # shellcheck disable=SC1091
-    source .input.env
+    source "${DEBUG_GITHUB_EVENT_PATH}/.input.env"
   fi
 }
 
 # --- functions for helpers ---------------------------------------------------
 
 # Prepare and post a status.
-post_pre_status() {
+post_pr_status() {
   head_label="$(jq -r '.pull_request.head.label' < "${GITHUB_EVENT_PATH}" )"
   compare=""
 
@@ -35,35 +39,44 @@ post_pre_status() {
     compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${head_label})"
   fi
 
-  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper) @ ${ACTION}<br>**Next version**: ${BUMPER_NEXT_VERSION}<br>${compare}"
-
-  FROM_FORK=$(jq -r '.pull_request.head.repo.fork' < "${GITHUB_EVENT_PATH}")
-
-  if [[ "${FROM_FORK}" == "true" ]]; then
-    post_warning "${post_txt}"
-  else
-    post_comment "${post_txt}"
+  LATEST=
+  if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
+    LATEST=" / latest"
   fi
 
-  echo "::notice ::${post_txt}"
-}
-
-# Prepare and post a status.
-post_post_status() {
-  compare=""
-
-  if [[ -n "${BUMPER_CURRENT_VERSION}" ]]; then
-    compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION})"
-  fi
-
-  post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})<br>**New version**: [${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})<br>${compare}"
+  post_txt="🏷️ [[bumper]](https://github.com/inetum-poland/action-bumper) @ ${ACTION}<br>**Next version**: ${BUMPER_NEXT_VERSION}${LATEST}<br>${compare}"
 
   post_comment "${post_txt}"
 
   echo "::notice ::${post_txt}"
 }
 
-# TODO! opened and labeled are producing two separate comments on the same PR.
+# Prepare and post a status.
+post_merge_status() {
+  compare=""
+
+  if [[ -n "${BUMPER_CURRENT_VERSION}" ]]; then
+    compare="**Changes**:[${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${BUMPER_NEXT_VERSION})"
+  fi
+
+  LATEST=
+  if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
+    LATEST=" / latest"
+  fi
+
+  post_txt="🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})<br>**New version**: [${BUMPER_NEXT_VERSION}${LATEST}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${BUMPER_NEXT_VERSION})<br>${compare}"
+
+  post_comment "${post_txt}"
+
+  echo "::notice ::${post_txt}"
+}
+
+post_merge_semver_status(){
+  echo "::notice ::New patch: ${PATCH}"
+  echo "::notice ::New minor: ${MINOR}"
+  echo "::notice ::New major: ${MAJOR}"
+}
+
 # Post a comment.
 post_comment() {
   body_text="$1"
@@ -77,20 +90,18 @@ post_comment() {
 
   output=
 
-  if [[ -n "${comment_id}" ]]; then
-    # comment already posted, update it
-    output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -X PATCH -d "${body}" "${update_endpoint}${comment_id}")
+  if [[ -n ${DEBUG_GITHUB_EVENT_PATH} ]]; then
+    true
   else
-    output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}")
+    if [[ -n "${comment_id}" ]]; then
+      # comment already posted, update it
+      output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -X PATCH -d "${body}" "${update_endpoint}${comment_id}")
+    else
+      output=$(curl -H "Authorization: token ${INPUT_GITHUB_TOKEN}" -d "${body}" "${endpoint}")
+    fi
+
+    echo "::notice ::$(echo "${output}" | jq -r '.id')"
   fi
-
-  echo "::notice ::$(echo "${output}" | jq -r '.id')"
-}
-
-# Post a warning comment.
-post_warning() {
-  body_text=$(echo "$1" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
-  echo "::warning ::${body_text}"
 }
 
 # --- functions for pr event --------------------------------------------------
@@ -114,13 +125,16 @@ setup_pr_title_from_pr_event() {
 
 # Get list of pull requests.
 list_pulls() {
-  pulls_endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc"
-
-  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
-    curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${pulls_endpoint}"
+  if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    cat "${DEBUG_GITHUB_EVENT_PATH}/pull_request.json"
   else
-    echo "INPUT_GITHUB_TOKEN is not available. Subscequent GitHub API call may fail due to API limit." >&2
-    curl -s "${pulls_endpoint}"
+    pulls_endpoint="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc"
+    if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
+      curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${pulls_endpoint}"
+    else
+      echo "INPUT_GITHUB_TOKEN is not available. Subscequent GitHub API call may fail due to API limit." >&2
+      curl -s "${pulls_endpoint}"
+    fi
   fi
 }
 
@@ -162,20 +176,10 @@ jq_check() {
   fi
 }
 
-# Check if the repository is shallowed.
-git_shallow_repo() {
-  # check the repository is shallowed.
-  # comes from https://stackoverflow.com/questions/37531605/how-to-test-if-git-repository-is-shallow
-  # the repository is shallowed, so we need to fetch all history.
-  # Fetch history as well because bump uses git history (git tag --merged).
-  if "$(git rev-parse --is-shallow-repository)"; then
-    git fetch --tags -f # Fetch existing tags before bump.
-    git fetch --prune --unshallow
-  fi
-}
-
 # Setup the necessary variables based on the GitHub event.
 setup_vars() {
+  ACTION=$(jq -r '.action' < "${GITHUB_EVENT_PATH}")
+
   if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
     PR_NUMBER=$(setup_pr_number_from_pr_event)
     PR_TITLE=$(setup_pr_title_from_pr_event)
@@ -187,51 +191,73 @@ setup_vars() {
     BUMPER_LABELS=$(setup_labels_from_push_event)
   fi
 
-  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_NONE}" ; then
+  BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
+
+  if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_NONE}" ; then
     BUMPER_BUMP_LEVEL="none"
   fi
 
-  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_PATCH}" ; then
+  if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_PATCH}" ; then
     BUMPER_BUMP_LEVEL="patch"
   fi
 
-  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MINOR}" ; then
+  if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_MINOR}" ; then
     BUMPER_BUMP_LEVEL="minor"
   fi
 
-  if echo "${BUMPER_LABELS}" | grep "${INPUT_BUMP_MAJOR}" ; then
+  if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_MAJOR}" ; then
     BUMPER_BUMP_LEVEL="major"
   fi
 }
 
-# A function that processes the current version to determine the next version and generate a tag message.
+# A function that processes the current version to determine the next version and generate a tag message (ignores latest tag if it exists).
 setup_git_tag() {
-  BUMPER_CURRENT_VERSION="$(git tag | grep -E "v?[0-9]+\.[0-9]+\.[0-9]+.*" | sort -V | tail -1)"
+  if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    # shellcheck disable=SC2002
+    BUMPER_CURRENT_VERSION="$(cat "${DEBUG_GITHUB_EVENT_PATH}/tags.json" | jq -r '[.[] | select(.name != "latest")] | .[0].name')"
+  else
+    BUMPER_CURRENT_VERSION="$(curl -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/tags?sort=updated&direction=desc" | jq -r '[.[] | select(.name != "latest")] | .[0].name')"
+  fi
+
+  if [[ "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
+    unset BUMPER_CURRENT_VERSION
+  fi
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     echo "current_version=${BUMPER_CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
   fi
-
-  BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
 }
 
 # A function that processes the bump level and current version to determine the next version and generate a tag message.
 bump_tag() {
   if [[ -z "${BUMPER_BUMP_LEVEL}" ]]; then
     if [[ "${INPUT_FAIL_IF_NO_BUMP}" == "true" ]]; then
-      echo "::error ::PR fails as no bump label is found."
+      echo "::error ::Job failed as no bump label is found."
       exit 1
-    fi
+    else
+      echo "::notice ::Job skiped as no bump label is found. Do nothing."
 
-    echo "::notice ::PR with labels for bump not found. Do nothing."
+      if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+        echo "skip=true" >> "$GITHUB_OUTPUT"
+      fi
+
+      exit 0
+    fi
+  elif [[ "${BUMPER_BUMP_LEVEL}" == "none" ]]; then
+    echo "::notice ::Job skiped as bump level is 'none'. Do nothing."
 
     if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
       echo "skip=true" >> "$GITHUB_OUTPUT"
     fi
-    exit
+
+    exit 0
   fi
 
-  BUMPER_NEXT_VERSION="v$(semver bump "${BUMPER_BUMP_LEVEL}" "${BUMPER_CURRENT_VERSION}")" || true
+  if [[ -z "${BUMPER_CURRENT_VERSION}" || "${BUMPER_CURRENT_VERSION}" == "null" ]]; then
+    check_missing_tags
+  else
+    BUMPER_NEXT_VERSION="v$(semver bump "${BUMPER_BUMP_LEVEL}" "${BUMPER_CURRENT_VERSION}")" || exit 1
+  fi
 
   if [[ -z "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
@@ -247,48 +273,49 @@ bump_tag() {
 # Set next version tag in case existing tags not found.
 check_missing_tags() {
   # Set next version tag in case existing tags not found.
-  if [[ -z "${BUMPER_NEXT_VERSION}" && -z "$(git tag)" ]]; then
-    case "${BUMP_LEVEL}" in
-      major)
-        BUMPER_NEXT_VERSION="v1.0.0"
-        ;;
-      minor)
-        BUMPER_NEXT_VERSION="v0.1.0"
-        ;;
-      patch)
-        BUMPER_NEXT_VERSION="v0.0.1"
-        ;;
-      *)
-        BUMPER_NEXT_VERSION="v0.0.0"
-        ;;
-    esac
-  fi
+  case "${BUMPER_BUMP_LEVEL}" in
+    major)
+      BUMPER_NEXT_VERSION="v1.0.0"
+      ;;
+    minor)
+      BUMPER_NEXT_VERSION="v0.1.0"
+      ;;
+    patch)
+      BUMPER_NEXT_VERSION="v0.0.1"
+      ;;
+    *)
+      BUMPER_NEXT_VERSION="v0.0.0"
+      ;;
+  esac
 }
 
 # Remove 'v' prefix from BUMPER_NEXT_VERSION if INPUT_INCLUDE_V is false.
 remove_v_prefix() {
   # Remove 'v' prefix if variable is false casted from string
   if [[ "${INPUT_INCLUDE_V}" == "false" ]]; then
-    BUMPER_NEXT_VERSION="${BUMPER_NEXT_VERSION/^v/}"
+    BUMPER_NEXT_VERSION="${BUMPER_NEXT_VERSION//v}"
   fi
 }
 
 # Process tags based on different conditions and perform Git operations accordingly.
 make_and_push_tag() {
-  if [[ "${INPUT_DRY_RUN}" == "true" || -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
-    echo "BUMPER_NEXT_VERSION=${BUMPER_NEXT_VERSION}"
-    echo "TAG_MESSAGE=${BUMPER_TAG_MESSAGE}"
-    exit 0
+  if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    true
+  else
+    # Push the next tag.
+    git tag -a "${BUMPER_NEXT_VERSION}" -m "${TAG_MESSAGE}"
+
+    if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
+      git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+    fi
+
+    git push origin "${BUMPER_NEXT_VERSION}"
+
+    if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
+      git tag -fa latest "${BUMPER_NEXT_VERSION}^{commit}"
+      git push --force origin latest
+    fi
   fi
-
-  # Push the next tag.
-  git tag -a "${BUMPER_NEXT_VERSION}" -m "${TAG_MESSAGE}"
-
-  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
-    git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-  fi
-
-  git push origin "${BUMPER_NEXT_VERSION}"
 }
 
 # Set up Git config.
@@ -311,18 +338,15 @@ bump_semver_tags() {
 
 # Semver update for tags.
 make_and_push_semver_tags() {
-  if [[ "${INPUT_DRY_RUN}" == "true" || -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
-    echo "PATCH=${PATCH}"
-    echo "MINOR=${MINOR}"
-    echo "MAJOR=${MAJOR}"
-    exit 0
+  if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+    true
+  else
+    git tag -fa "${MINOR}" "${BUMPER_NEXT_VERSION}^{commit}"
+    git tag -fa "${MAJOR}" "${BUMPER_NEXT_VERSION}^{commit}"
+
+    git push --force origin "${MINOR}"
+    git push --force origin "${MAJOR}"
   fi
-
-  git tag -fa "${MINOR}" -m "${TAG_MESSAGE}"
-  git tag -fa "${MAJOR}" -m "${TAG_MESSAGE}"
-
-  git push --force origin "${MINOR}"
-  git push --force origin "${MAJOR}"
 }
 
 # --- main --------------------------------------------------------------------
@@ -340,36 +364,34 @@ MINOR=
 MAJOR=
 
 main() {
+  init_debug
+
   jq_check
   semver_check
 
-  if [[ -n "${GITHUB_EVENT_PATH}" ]]; then
+  if [[ -v "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     cat "${GITHUB_EVENT_PATH}"
   fi
-  ACTION=$(jq -r '.action' < "${GITHUB_EVENT_PATH}")
 
-  init_debug
-  git_shallow_repo
   setup_git_tag
   setup_git_config
-
-  echo "::notice ::${ACTION}"
+  setup_vars
 
   if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" && ${INPUT_BUMP_SEMVER} == "true" ]]; then
     bump_semver_tags
     remove_v_prefix
     make_and_push_semver_tags
+    post_merge_semver_status
   else
-    setup_vars
     bump_tag
-    check_missing_tags
     remove_v_prefix
 
     if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
-      post_pre_status
+      echo "::notice ::${ACTION}"
+      post_pr_status
     else
       make_and_push_tag
-      post_post_status
+      post_merge_status
     fi
   fi
 
@@ -377,5 +399,3 @@ main() {
 }
 
 main
-
-# TEST

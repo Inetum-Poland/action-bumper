@@ -46,6 +46,10 @@ inputs:
     description: "Whether to include v in tag name"
     default: "true"
     required: false
+  add_latest:
+    description: "Whether to add `latest` tag"
+    default: "false"
+    required: false
 outputs:
   current_version:
     description: "current version"
