@@ -16,7 +16,7 @@ fi
 # Initial debug.
 init_debug() {
   # For debugging.
-  if [[ -n "${DEBUG}" && "${DEBUG}" == "true" ]]; then
+  if [[ (-n "${DEBUG}" && "${DEBUG}" == "true") || -n "${ACTIONS_STEP_DEBUG}" && "${ACTIONS_STEP_DEBUG}" == "true" ]]; then
     set -x
     export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
   fi
@@ -303,7 +303,7 @@ make_and_push_tag() {
     true
   else
     # Push the next tag.
-    git tag -a "${BUMPER_NEXT_VERSION}" -m "${TAG_MESSAGE}"
+    git tag -a "${BUMPER_NEXT_VERSION}" -m "${BUMPER_TAG_MESSAGE}"
 
     if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
       git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -312,7 +312,7 @@ make_and_push_tag() {
     git push origin "${BUMPER_NEXT_VERSION}"
 
     if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
-      git tag -fa latest "${BUMPER_NEXT_VERSION}^{commit}"
+      git tag -fa latest "${BUMPER_NEXT_VERSION}^{commit}" -m "${BUMPER_TAG_MESSAGE}"
       git push --force origin latest
     fi
   fi
@@ -341,8 +341,8 @@ make_and_push_semver_tags() {
   if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
     true
   else
-    git tag -fa "${MINOR}" "${BUMPER_NEXT_VERSION}^{commit}"
-    git tag -fa "${MAJOR}" "${BUMPER_NEXT_VERSION}^{commit}"
+    git tag -fa "${MINOR}" "${BUMPER_NEXT_VERSION}^{commit}" -m "${BUMPER_TAG_MESSAGE}"
+    git tag -fa "${MAJOR}" "${BUMPER_NEXT_VERSION}^{commit}" -m "${BUMPER_TAG_MESSAGE}"
 
     git push --force origin "${MINOR}"
     git push --force origin "${MAJOR}"
