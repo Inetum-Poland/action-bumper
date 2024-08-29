@@ -1,0 +1,20 @@
+{
+  "action": "opened",
+
+  "pull_request": {
+    "number": 1,
+    "title": "feat(test): test the features",
+    "head": {
+      "label": "feature/test"
+    },
+
+    "labels": [
+      {
+        "name": "bumper:major"
+      },
+      {
+        "name": "wiki"
+      }
+    ]
+  }
+}

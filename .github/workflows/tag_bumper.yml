@@ -14,11 +14,16 @@ on:
       - reopened
       - synchronize
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   tag_bumper:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - id: bumper
         uses: ./
         with:

@@ -1,14 +1,16 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
-early_access: false
+early_access: true
+tone_instructions: "Please act as we were in Tolkien's Middle-earth. Write in the style of J.R.R. Tolkien."
 reviews:
-  request_changes_workflow: false
+  profile: assertive
+  request_changes_workflow: true
   high_level_summary: true
   poem: false
   review_status: true
   collapse_walkthrough: false
   auto_review:
-    enabled: false
+    enabled: true
     ignore_title_keywords: []
     drafts: false
 chat:
