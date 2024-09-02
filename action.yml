@@ -54,10 +54,10 @@ inputs:
 
 outputs:
   current_version:
-    description: "current version"
+    description: "The current version before any changes"
     value: ${{ steps.action_bumper.outputs.current_version }}
   next_version:
-    description: "next version"
+    description: "The next version after any changes"
     value: ${{ steps.action_bumper.outputs.next_version }}
   skip:
     description: "True if release is skipped. e.g. No labels attached to PR."

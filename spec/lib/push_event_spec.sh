@@ -8,6 +8,7 @@ Describe 'lib/push_event.sh'
 
     It 'returns pulls from file'
       DEBUG_GITHUB_EVENT_PATH="./spec/lib/push_event"
+
       When call list_pulls
       The output should eq '[{"number": 1, "title":"feat(gha): align the gh actions before publish","merge_commit_sha":"54fa23aef40b58c8f22350c830f7a89dad0121bc","labels":[{"name":"feature"},{"name":"bumper:patch"},{"name":"doc"}]},{"number": 2, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"0f9485fc7a911a6ed4acbc0d35c62fc844d83c56","labels":[{"name":"feature"},{"name":"bumper:patch"}]},{"number": 3, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"05d0d3ff25ee0a40dac1aba4d48492cf72c4da5d","labels":[{"name":"feature"},{"name":"bumper:patch"}]}]'
       The status should be success
@@ -17,7 +18,7 @@ Describe 'lib/push_event.sh'
       DEBUG_GITHUB_EVENT_PATH=
       INPUT_GITHUB_TOKEN="XXX"
 
-      __get_pulls_with_token() {
+      curl() {
         echo '[{"number": 1, "title":"feat(gha): align the gh actions before publish","merge_commit_sha":"54fa23aef40b58c8f22350c830f7a89dad0121bc","labels":[{"name":"feature"},{"name":"bumper:patch"},{"name":"doc"}]},{"number": 2, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"0f9485fc7a911a6ed4acbc0d35c62fc844d83c56","labels":[{"name":"feature"},{"name":"bumper:patch"}]},{"number": 3, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"05d0d3ff25ee0a40dac1aba4d48492cf72c4da5d","labels":[{"name":"feature"},{"name":"bumper:patch"}]}]'
       }
 
@@ -30,7 +31,7 @@ Describe 'lib/push_event.sh'
       DEBUG_GITHUB_EVENT_PATH=
       INPUT_GITHUB_TOKEN=
 
-      __get_pulls_without_token() {
+      curl() {
         echo '[{"number": 1, "title":"feat(gha): align the gh actions before publish","merge_commit_sha":"54fa23aef40b58c8f22350c830f7a89dad0121bc","labels":[{"name":"feature"},{"name":"bumper:patch"},{"name":"doc"}]},{"number": 2, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"0f9485fc7a911a6ed4acbc0d35c62fc844d83c56","labels":[{"name":"feature"},{"name":"bumper:patch"}]},{"number": 3, "title":"chore(tf): action-bumper merge test","merge_commit_sha":"05d0d3ff25ee0a40dac1aba4d48492cf72c4da5d","labels":[{"name":"feature"},{"name":"bumper:patch"}]}]'
       }
 

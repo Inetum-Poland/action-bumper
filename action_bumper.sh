@@ -36,6 +36,8 @@ action_bumper() {
 
   jq_check
   semver_check
+  curl_check
+  git_check
 
   # KCOV_EXCL_START
   if [[ -v "${DEBUG_GITHUB_EVENT_PATH:-}" ]]; then
@@ -52,17 +54,16 @@ action_bumper() {
     setup_git_config
     make_and_push_semver_tags
     make_merge_semver_status
+  elif [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+    bump_tag
+    remove_v_prefix
+    make_pr_status
   else
     bump_tag
     remove_v_prefix
-
-    if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
-      make_pr_status
-    else
-      setup_git_config
-      make_and_push_tag
-      make_push_status
-    fi
+    setup_git_config
+    make_and_push_tag
+    make_push_status
   fi
 }
 

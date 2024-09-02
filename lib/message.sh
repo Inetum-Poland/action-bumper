@@ -7,7 +7,7 @@ __get_head_label() {
 }
 
 make_pr_status() {
-  head_label=$(__get_head_label)
+  head_label="$(__get_head_label)"
   compare=""
 
   if [[ -n "${BUMPER_CURRENT_VERSION:-}" ]]; then

@@ -42,4 +42,46 @@ Describe 'lib/check.sh'
       The output should eq '::error ::jq is not installed.'
     End
   End
+
+  Describe 'curl_check'
+    It 'checks curl'
+      When call curl_check
+      The status should be success
+    End
+
+    It 'checks curl with error'
+      curl() {
+        false
+      }
+
+      exit() {
+        false
+      }
+
+      When call curl_check
+      The status should be failure
+      The output should eq '::error ::curl is not installed.'
+    End
+  End
+
+  Describe 'git_check'
+    It 'checks git'
+      When call git_check
+      The status should be success
+    End
+
+    It 'checks git with error'
+      git() {
+        false
+      }
+
+      exit() {
+        false
+      }
+
+      When call git_check
+      The status should be failure
+      The output should eq '::error ::git is not installed.'
+    End
+  End
 End

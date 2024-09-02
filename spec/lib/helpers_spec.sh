@@ -7,7 +7,7 @@ Describe 'lib/helpers.sh'
     INPUT_TAG_AS_EMAIL="github-actions[bot]@users.noreply.github.com"
 
     git() {
-      echo "git $@"
+      echo "git ${@}"
     }
 
     It 'sets up git config'
@@ -74,12 +74,13 @@ Describe 'lib/helpers.sh'
       "none" "v0.0.0"
     End
 
+
     It "sets version if tags not found and level is '$1'"
       BUMPER_BUMP_LEVEL="$1"
 
       When call check_missing_tags
       The status should be success
-      The variable 'BUMPER_NEXT_VERSION' should eq $2
+      The variable 'BUMPER_NEXT_VERSION' should eq "$2"
     End
   End
 

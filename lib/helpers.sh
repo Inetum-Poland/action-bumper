@@ -18,21 +18,7 @@ __append_github_output() {
   echo "$1" >> "$GITHUB_OUTPUT"
 }
 
-# !!! HARD TO TEST !!!
-# TODO: potentially needs refactoring
-setup_vars() {
-  ACTION=$(__get_action)
-
-  if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
-    PR_NUMBER=$(setup_pr_number_from_pr_event)
-    PR_TITLE=$(setup_pr_title_from_pr_event)
-    BUMPER_LABELS=$(setup_labels_from_pr_event)
-  else
-    PR_NUMBER=$(setup_pr_number_from_push_event)
-    PR_TITLE=$(setup_pr_title_from_push_event)
-    BUMPER_LABELS=$(setup_labels_from_push_event)
-  fi
-
+__setup_bump_level() {
   BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
 
   if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_NONE}" ; then
@@ -50,6 +36,30 @@ setup_vars() {
   if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_MAJOR}" ; then
     BUMPER_BUMP_LEVEL="major"
   fi
+}
+
+__setup_vars_from_pr_event() {
+  PR_NUMBER=$(setup_pr_number_from_pr_event)
+  PR_TITLE=$(setup_pr_title_from_pr_event)
+  BUMPER_LABELS=$(setup_labels_from_pr_event)
+}
+
+__setup_vars_from_push_event() {
+  PR_NUMBER=$(setup_pr_number_from_push_event)
+  PR_TITLE=$(setup_pr_title_from_push_event)
+  BUMPER_LABELS=$(setup_labels_from_push_event)
+}
+
+setup_vars() {
+  ACTION=$(__get_action)
+
+  if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+    __setup_vars_from_pr_event
+  else
+    __setup_vars_from_push_event
+  fi
+
+  __setup_bump_level
 }
 
 setup_git_tag() {
