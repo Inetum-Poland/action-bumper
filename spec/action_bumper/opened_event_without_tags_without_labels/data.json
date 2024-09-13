@@ -1,0 +1,12 @@
+{
+  "action": "opened",
+  "number": 1,
+
+  "pull_request": {
+    "head": {
+      "label": "feature/test"
+    },
+
+    "labels": []
+  }
+}

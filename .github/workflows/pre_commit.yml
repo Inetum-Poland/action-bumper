@@ -9,27 +9,18 @@ on:
 jobs:
   pre_commit:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_APP_ID: ${{ vars.GH_APP_ID }}
-      GITHUB_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
-      GITHUB_APP_PEM_FILE: ${{ secrets.GH_APP_PEM_FILE }}
-      TF_INPUT: ${{ vars.TF_INPUT }}
-      TF_IN_AUTOMATION: ${{ vars.TF_IN_AUTOMATION }}
-      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+    defaults:
+      run:
+        shell: bash
     steps:
+      - uses: actions/checkout@v4
       - run: |
           sudo apt update
-          sudo apt install -y unzip software-properties-common python3 python3-pip python-is-python3 build-essential jq
-          python3 -m pip install --upgrade pip
-          pip3 install --no-cache-dir pre-commit distlib setuptools pyyaml platformdirs identify filelock cfgv virtualenv nodeenv
-          curl -L "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")" > terraform-docs.tgz && tar -xzf terraform-docs.tgz terraform-docs && rm terraform-docs.tgz && chmod +x terraform-docs && sudo mv terraform-docs /usr/bin/
-          curl -L "$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E -m 1 "https://.+?_linux_amd64.zip")" > tflint.zip && unzip tflint.zip && rm tflint.zip && sudo mv tflint /usr/bin/
-          curl -L "$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep -o -E -i -m 1 "https://.+?/trivy_.+?_Linux-64bit.tar.gz")" > trivy.tar.gz && tar -xzf trivy.tar.gz trivy && rm trivy.tar.gz && sudo mv trivy /usr/bin
-          curl -L "$(curl -s https://api.github.com/repos/minamijoyo/hcledit/releases/latest | grep -o -E -m 1 "https://.+?_linux_amd64.tar.gz")" > hcledit.tar.gz && tar -xzf hcledit.tar.gz hcledit && rm hcledit.tar.gz && sudo mv hcledit /usr/bin/
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - uses: pre-commit/action@v3.0.1
+          sudo apt install -y jq curl git bash
+          curl https://mise.run | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
+      - run: |
+          mise install
+      - run: |
+          pre-commit run --show-diff-on-failure --color=always --all-files
