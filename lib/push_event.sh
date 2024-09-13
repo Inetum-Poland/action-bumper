@@ -10,7 +10,7 @@ __get_pulls() {
 }
 
 list_pulls() {
-  if [[ -n "${DEBUG_GITHUB_EVENT_PATH}" ]]; then
+  if [[ -n "${DEBUG_GITHUB_EVENT_PATH:-}" ]]; then
     cat "${DEBUG_GITHUB_EVENT_PATH}/pull_request.json"
   else
     __get_pulls "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc"
