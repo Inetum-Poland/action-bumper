@@ -1,20 +1,18 @@
 Describe 'lib/debug.sh'
   Include lib/debug.sh
 
-  Describe 'execute_or_debug'
+  Describe 'exec_debug'
     It 'runs wet'
-      INPUT_DRY_RUN="false"
+      ACTIONS_STEP_DEBUG="false"
 
-      When call execute_or_debug "echo 'hello'"
-      The output should equal "'hello'"
+      When call exec_debug "echo 'hello'"
+      The output should equal "hello"
       The status should be success
     End
 
     It 'runs dry'
-      INPUT_DRY_RUN="true"
-
-      When call execute_or_debug "echo 'hello'"
-      The stderr should equal "> echo 'hello'"
+      When call exec_debug "echo 'hello'"
+      The output should equal "> echo 'hello'"
       The status should be success
     End
   End

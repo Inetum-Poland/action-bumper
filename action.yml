@@ -3,54 +3,19 @@ description: 'Bump version when merging Pull Request with specific labels (bumpe
 author: 'Inetum-Poland'
 
 inputs:
-  default_bump_level:
-    description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty"
-    required: false
-  dry_run:
-    description: "Do not actually tag next version if it's true"
-    required: false
-  github_token:
-    description: 'GITHUB_TOKEN to list pull requests and create tags'
-    default: '${{ github.token }}'
-    required: true
-  tag_as_user:
-    description: "Name to use when creating tags"
-    required: false
-  tag_as_email:
-    description: "Email address to use when creating tags"
-    required: false
-  bump_major:
-    description: "Label name for major bump (bump:major)"
-    required: false
-    default: "bumper:major"
-  bump_minor:
-    description: "Label name for minor bump (bump:minor)"
-    required: false
-    default: "bumper:minor"
-  bump_patch:
-    description: "Label name for patch bump (bump:patch)"
-    required: false
-    default: "bumper:patch"
-  bump_none:
-    description: "Label name for no bump (bump:none)"
-    default: "bumper:none"
-    required: false
-  fail_if_no_bump:
-    description: "Fail if no bump label is found"
-    required: false
-    default: "false"
-  bump_semver:
-    description: "Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3`."
-    default: "false"
-    required: false
-  include_v:
-    description: "Whether to include v in tag name"
-    default: "true"
-    required: false
-  add_latest:
-    description: "Whether to add `latest` tag"
-    default: "false"
-    required: false
+  add_latest: { description: "Whether to add `latest` tag", required: false, default: "false" }
+  bump_major: { description: "Label name for major bump (bump:major)", required: false, default: "bumper:major" }
+  bump_minor: { description: "Label name for minor bump (bump:minor)", required: false, default: "bumper:minor" }
+  bump_none: { description: "Label name for no bump (bump:none)", required: false, default: "bumper:none" }
+  bump_patch: { description: "Label name for patch bump (bump:patch)", required: false, default: "bumper:patch" }
+  bump_semver: { description: "Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3`.", required: false, default: "false" }
+  default_bump_level: { description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty", required: false }
+  dry_run: { description: "Do not actually tag next version if it's true", required: false }
+  fail_if_no_bump: { description: "Fail if no bump label is found", required: false, default: "false" }
+  github_token: { description: 'GITHUB_TOKEN to list pull requests and create tags', required: true, default: '${{ github.token }}' }
+  include_v: { description: "Whether to include v in tag name", required: false, default: "true" }
+  tag_as_email: { description: "Email address to use when creating tags", required: false }
+  tag_as_user: { description: "Name to use when creating tags", required: false }
 
 outputs:
   current_version:
@@ -85,28 +50,28 @@ runs:
       shell: bash
 
     - uses: jwalton/gh-find-current-pr@v1
+      if: ${{ !github.event.act }} # skip during local actions testing
       id: finder
 
     - id: action_bumper
       run: ${{ github.action_path }}/action_bumper.sh
       shell: bash
       env:
-        INPUT_DEFAULT_BUMP_LEVEL: ${{ inputs.default_bump_level }}
-        INPUT_DRY_RUN: ${{ inputs.dry_run }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_TAG_AS_USER: ${{ inputs.tag_as_user }}
-        INPUT_TAG_AS_EMAIL: ${{ inputs.tag_as_email }}
+        INPUT_ADD_LATEST: ${{ inputs.add_latest }}
         INPUT_BUMP_MAJOR: ${{ inputs.bump_major }}
         INPUT_BUMP_MINOR: ${{ inputs.bump_minor }}
-        INPUT_BUMP_PATCH: ${{ inputs.bump_patch }}
         INPUT_BUMP_NONE: ${{ inputs.bump_none }}
-        INPUT_FAIL_IF_NO_BUMP: ${{ inputs.fail_if_no_bump }}
+        INPUT_BUMP_PATCH: ${{ inputs.bump_patch }}
         INPUT_BUMP_SEMVER: ${{ inputs.bump_semver }}
+        INPUT_DEFAULT_BUMP_LEVEL: ${{ inputs.default_bump_level }}
+        INPUT_FAIL_IF_NO_BUMP: ${{ inputs.fail_if_no_bump }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_INCLUDE_V: ${{ inputs.include_v }}
-        INPUT_ADD_LATEST: ${{ inputs.add_latest }}
+        INPUT_TAG_AS_EMAIL: ${{ inputs.tag_as_email }}
+        INPUT_TAG_AS_USER: ${{ inputs.tag_as_user }}
 
     - uses: marocchino/sticky-pull-request-comment@v2
-      if: always() && (steps.action_bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null)
+      if: always() && (steps.action_bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null) && ${{ !github.event.act }}
       with:
         header: action-bumper
         number: ${{ steps.finder.outputs.pr }}

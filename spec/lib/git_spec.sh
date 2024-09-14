@@ -20,8 +20,8 @@ Describe 'lib/git.sh'
 
       When call make_and_push_tag
       The status should be success
-      The line 1 of output should eq 'git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
-      The line 2 of output should eq 'git push origin "1.2.3"'
+      The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
+      The line 2 of output should eq '> git push origin "1.2.3"'
     End
 
     It 'pushes tag without latest'
@@ -29,9 +29,9 @@ Describe 'lib/git.sh'
 
       When call make_and_push_tag
       The status should be success
-      The line 1 of output should eq 'git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
-      The line 2 of output should eq 'git push origin "1.2.3"'
-      The line 3 of output should eq 'git tag -fa latest "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
+      The line 2 of output should eq '> git push origin "1.2.3"'
+      The line 3 of output should eq '> git tag -fa latest "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
     End
   End
 
@@ -42,10 +42,10 @@ Describe 'lib/git.sh'
     It 'pushes tag'
       When call make_and_push_semver_tags
       The status should be success
-      The line 1 of output should eq 'git tag -fa "1.2" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
-      The line 2 of output should eq 'git tag -fa "1" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
-      The line 3 of output should eq 'git push --force origin "1.2"'
-      The line 4 of output should eq 'git push --force origin "1"'
+      The line 1 of output should eq '> git tag -fa "1.2" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 2 of output should eq '> git tag -fa "1" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 3 of output should eq '> git push --force origin "1.2"'
+      The line 4 of output should eq '> git push --force origin "1"'
     End
   End
 End
