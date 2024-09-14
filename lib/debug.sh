@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 init_debug() {
-  if [[ -n "${ACTIONS_STEP_DEBUG:-}" && "${ACTIONS_STEP_DEBUG}" == "true" && -z "${SHELLSPEC:-}" ]]; then
+  if [[ (-n "${ACTIONS_STEP_DEBUG:-}" && "${ACTIONS_STEP_DEBUG}" == "true") && "${SHELLSPEC:-}" != "true" ]]; then
     # KCOV_EXCL_START
     set -x
     export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -17,7 +17,7 @@ init_debug() {
 }
 
 exec_debug() {
-  if [[ -n "${ACTIONS_STEP_DEBUG:-}" && "${ACTIONS_STEP_DEBUG}" == "true" ]]; then
+  if [[ (-n "${ACTIONS_STEP_DEBUG:-}" && "${ACTIONS_STEP_DEBUG}" == "true") ]]; then
     echo "> ${1}" 2>&1;
   else
     bash -c "${1}"

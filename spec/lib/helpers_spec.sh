@@ -2,6 +2,8 @@ Describe 'lib/helpers.sh'
   Include lib/helpers.sh
   Include lib/debug.sh
 
+  ACTIONS_STEP_DEBUG="true"
+
   Describe 'setup_git_config'
     INPUT_TAG_AS_USER="github-actions[bot]"
     INPUT_TAG_AS_EMAIL="github-actions[bot]@users.noreply.github.com"
