@@ -14,9 +14,6 @@ spec_helper_precheck() {
     abort "Only bash is supported."
   fi
 
-  # GitHub Actions debug
-  setenv ACTIONS_STEP_DEBUG="true"
-
   # Shellspec debug
   setenv SHELLSPEC="true"
 }

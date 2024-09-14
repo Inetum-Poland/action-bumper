@@ -30,3 +30,4 @@ jobs:
           fail_if_no_bump: true
           bump_semver: true
           add_latest: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,10 @@
 # shellcheck disable=SC2148
+# shellcheck disable=SC2034
 
 Describe 'action_bumper.sh'
+  # GitHub Actions debug
+  ACTIONS_STEP_DEBUG="true"
+
   setup() {
     GITHUB_OUTPUT="/tmp/shellspec-${RANDOM}"
     bash -c "touch ${GITHUB_OUTPUT}"

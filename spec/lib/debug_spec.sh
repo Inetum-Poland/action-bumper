@@ -1,5 +1,6 @@
 Describe 'lib/debug.sh'
   Include lib/debug.sh
+  ACTIONS_STEP_DEBUG="true"
 
   Describe 'exec_debug'
     It 'runs wet'
@@ -19,8 +20,6 @@ Describe 'lib/debug.sh'
 
   Describe 'init_debug'
     It 'does debug'
-      DEBUG=
-      ACTIONS_STEP_DEBUG=
       DEBUG_GITHUB_EVENT_PATH=spec/action_bumper/opened_event_bumper_auto
 
       When call init_debug

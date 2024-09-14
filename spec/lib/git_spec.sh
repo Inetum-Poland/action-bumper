@@ -2,7 +2,7 @@ Describe 'lib/git.sh'
   Include lib/git.sh
   Include lib/debug.sh
 
-  INPUT_DRY_RUN=
+  ACTIONS_STEP_DEBUG="true"
   GITHUB_REPOSITORY="inetum-poland/action-bumper"
   BUMPER_TAG_MESSAGE="1.2.3: PR #1 - test"
   BUMPER_NEXT_VERSION="1.2.3"
