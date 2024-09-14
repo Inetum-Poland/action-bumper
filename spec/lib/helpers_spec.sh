@@ -16,8 +16,8 @@ Describe 'lib/helpers.sh'
 
       When call setup_git_config
       The status should be success
-      The line 1 of output should eq 'git config user.name "github-actions[bot]"'
-      The line 2 of output should eq 'git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
     End
 
     It 'sets up git config with token'
@@ -28,9 +28,9 @@ Describe 'lib/helpers.sh'
 
       When call setup_git_config
       The status should be success
-      The line 1 of output should eq 'git config user.name "github-actions[bot]"'
-      The line 2 of output should eq 'git config user.email "github-actions[bot]@users.noreply.github.com"'
-      The line 3 of output should eq 'git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
     End
   End
 

@@ -90,13 +90,13 @@ Describe 'action_bumper.sh'
       When run source action_bumper.sh
       The status should be success
       The contents of file "${GITHUB_OUTPUT}" should include 'tag_status=New patch: v0.9.1<br>New minor: v0.9<br>New major: v0'
-      The line 1 of stderr should eq '> git config user.name "github-actions[bot]"'
-      The line 2 of stderr should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
-      The line 3 of stderr should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
-      The line 4 of stderr should eq '> git tag -fa "v0.9" "^{commit}" -m ""'
-      The line 5 of stderr should eq '> git tag -fa "v0" "^{commit}" -m ""'
-      The line 6 of stderr should eq '> git push --force origin "v0.9"'
-      The line 7 of stderr should eq '> git push --force origin "v0"'
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
+      The line 4 of output should eq '> git tag -fa "v0.9" "^{commit}" -m ""'
+      The line 5 of output should eq '> git tag -fa "v0" "^{commit}" -m ""'
+      The line 6 of output should eq '> git push --force origin "v0.9"'
+      The line 7 of output should eq '> git push --force origin "v0"'
     End
   End
 
@@ -107,11 +107,11 @@ Describe 'action_bumper.sh'
       When run source action_bumper.sh
       The status should be success
       The contents of file "${GITHUB_OUTPUT}" should include 'tag_status=🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](https://github.com/inetum-poland/action-bumper/actions/runs/1)<br>**New version**: [v0.9.2](https://github.com/inetum-poland/action-bumper/releases/tag/v0.9.2)<br>**Changes**: [v0.9.1...v0.9.2](https://github.com/inetum-poland/action-bumper/compare/v0.9.1...v0.9.2)'
-      The line 1 of stderr should eq '> git config user.name "github-actions[bot]"'
-      The line 2 of stderr should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
-      The line 3 of stderr should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
-      The line 4 of stderr should eq '> git tag -a "v0.9.2" -m "v0.9.2: PR #null - feat(gha): align the gh actions before publish"'
-      The line 5 of stderr should eq '> git push origin "v0.9.2"'
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
+      The line 4 of output should eq '> git tag -a "v0.9.2" -m "v0.9.2: PR #null - feat(gha): align the gh actions before publish"'
+      The line 5 of output should eq '> git push origin "v0.9.2"'
 
     End
   End
@@ -123,11 +123,11 @@ Describe 'action_bumper.sh'
       When run source action_bumper.sh
       The status should be success
       The contents of file "${GITHUB_OUTPUT}" should include 'tag_status=🚀 [[bumper]](https://github.com/inetum-poland/action-bumper) [Bumped!](https://github.com/inetum-poland/action-bumper/actions/runs/1)<br>**New version**: [0.9.2](https://github.com/inetum-poland/action-bumper/releases/tag/0.9.2)<br>**Changes**: [v0.9.1...0.9.2](https://github.com/inetum-poland/action-bumper/compare/v0.9.1...0.9.2)'
-      The line 1 of stderr should eq '> git config user.name "github-actions[bot]"'
-      The line 2 of stderr should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
-      The line 3 of stderr should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
-      The line 4 of stderr should eq '> git tag -a "0.9.2" -m "v0.9.2: PR #null - feat(gha): align the gh actions before publish"'
-      The line 5 of stderr should eq '> git push origin "0.9.2"'
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
+      The line 4 of output should eq '> git tag -a "0.9.2" -m "v0.9.2: PR #null - feat(gha): align the gh actions before publish"'
+      The line 5 of output should eq '> git push origin "0.9.2"'
     End
   End
 

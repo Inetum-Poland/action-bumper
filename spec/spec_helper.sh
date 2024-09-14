@@ -13,6 +13,12 @@ spec_helper_precheck() {
   if [ "$SHELL_TYPE" != "bash" ]; then
     abort "Only bash is supported."
   fi
+
+  # GitHub Actions debug
+  setenv ACTIONS_STEP_DEBUG="true"
+
+  # Shellspec debug
+  setenv SHELLSPEC="true"
 }
 
 # This callback function will be invoked after a specfile has been loaded.
@@ -24,8 +30,4 @@ spec_helper_loaded() {
 spec_helper_configure() {
   # Available functions: import, before_each, after_each, before_all, after_all
   : import 'support/custom_matcher'
-}
-
-debug_spec_precheck() {
-  setenv INPUT_DRY_RUN="true"
 }

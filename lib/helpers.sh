@@ -135,11 +135,11 @@ remove_v_prefix() {
 }
 
 setup_git_config() {
-  execute_or_debug "git config user.name \"${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}\""
-  execute_or_debug "git config user.email \"${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}\""
+  exec_debug "git config user.name \"${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}\""
+  exec_debug "git config user.email \"${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}\""
 
   if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
-    execute_or_debug "git remote set-url origin \"https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\""
+    exec_debug "git remote set-url origin \"https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\""
   fi
 }
 
