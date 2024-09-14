@@ -17,7 +17,7 @@ init_debug() {
 }
 
 exec_debug() {
-  if [[ -n "${ACTIONS_STEP_DEBUG}" && "${ACTIONS_STEP_DEBUG}" == "true" ]]; then
+  if [[ -n "${ACTIONS_STEP_DEBUG:-}" && "${ACTIONS_STEP_DEBUG}" == "true" ]]; then
     echo "> ${1}" 2>&1;
   else
     bash -c "${1}"
