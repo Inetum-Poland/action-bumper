@@ -1,10 +1,10 @@
 Describe 'lib/debug.sh'
   Include lib/debug.sh
-  ACTIONS_STEP_DEBUG="true"
+  INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
 
   Describe 'exec_debug'
     It 'runs wet'
-      ACTIONS_STEP_DEBUG="false"
+      INETUM_POLAND_ACTION_BUMPER_DEBUG="false"
 
       When call exec_debug "echo 'hello'"
       The output should equal "hello"
