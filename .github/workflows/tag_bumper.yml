@@ -21,6 +21,8 @@ permissions:
 jobs:
   tag_bumper:
     runs-on: ubuntu-latest
+    env:
+      INETUM_POLAND_ACTION_BUMPER_DEBUG: ${{ vars.INETUM_POLAND_ACTION_BUMPER_DEBUG }}
     steps:
       - uses: actions/checkout@v4
 
