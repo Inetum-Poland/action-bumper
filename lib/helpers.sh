@@ -134,15 +134,6 @@ remove_v_prefix() {
   fi
 }
 
-setup_git_config() {
-  exec_debug "git config user.name \"${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}\""
-  exec_debug "git config user.email \"${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}\""
-
-  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
-    exec_debug "git remote set-url origin \"https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\""
-  fi
-}
-
 # shellcheck disable=SC2034
 bump_semver_tags() {
   PATCH="${BUMPER_CURRENT_VERSION}" # v1.2.3

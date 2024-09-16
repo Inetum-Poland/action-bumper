@@ -4,38 +4,6 @@ Describe 'lib/helpers.sh'
 
   INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
 
-  Describe 'setup_git_config'
-    INPUT_TAG_AS_USER="github-actions[bot]"
-    INPUT_TAG_AS_EMAIL="github-actions[bot]@users.noreply.github.com"
-
-    git() {
-      echo "git ${@}"
-    }
-
-    It 'sets up git config'
-      INPUT_DRY_RUN=
-      INPUT_GITHUB_TOKEN=
-
-      When call setup_git_config
-      The status should be success
-      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
-      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
-    End
-
-    It 'sets up git config with token'
-      INPUT_DRY_RUN=
-      INPUT_GITHUB_TOKEN="XXX"
-      GITHUB_ACTOR="github-actions[bot]"
-      GITHUB_REPOSITORY="inetum-poland/action-bumper"
-
-      When call setup_git_config
-      The status should be success
-      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
-      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
-      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
-    End
-  End
-
   Describe 'bump_semver_tags'
     BUMPER_CURRENT_VERSION="1.2.3"
 
@@ -216,17 +184,17 @@ Describe 'lib/helpers.sh'
     # Include lib/pr_event.sh
     # Include lib/push_event.sh
 
-    GITHUB_API_URL="https://api.github.com"
-    GITHUB_REPOSITORY="inetum-poland/action-bumper"
-    INPUT_GITHUB_TOKEN=
-    GITHUB_EVENT_PATH="test"
     DEBUG_GITHUB_EVENT_PATH="test"
+    GITHUB_API_URL="https://api.github.com"
+    GITHUB_EVENT_PATH="test"
+    GITHUB_REPOSITORY="inetum-poland/action-bumper"
     GITHUB_SHA="54fa23aef40b58c8f22350c830f7a89dad0121bc"
-    INPUT_DEFAULT_BUMP_LEVEL="patch"
     INPUT_BUMP_MAJOR="bumper:major"
     INPUT_BUMP_MINOR="bumper:minor"
-    INPUT_BUMP_PATCH="bumper:patch"
     INPUT_BUMP_NONE="bumper:none"
+    INPUT_BUMP_PATCH="bumper:patch"
+    INPUT_DEFAULT_BUMP_LEVEL="patch"
+    INPUT_GITHUB_TOKEN=
 
     Context 'pr_event'
       __get_action() {
