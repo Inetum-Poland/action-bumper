@@ -4,11 +4,6 @@
 
 set -eu
 
-# Debug
-if [[ "${SHELLSPEC:-}" != "true" ]]; then
-  tree .
-fi
-
 # KCOV_EXCL_START
 if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   git config --global --add safe.directory "${GITHUB_WORKSPACE}" || exit

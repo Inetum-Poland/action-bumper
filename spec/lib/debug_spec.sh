@@ -20,7 +20,7 @@ Describe 'lib/debug.sh'
 
   Describe 'init_debug'
     It 'does debug'
-      DEBUG_GITHUB_EVENT_PATH=spec/action_bumper/opened_event_bumper_auto
+      DEBUG_GITHUB_EVENT_PATH=spec/bumper/opened_event_bumper_auto
 
       When call init_debug
       The variable 'GITHUB_EVENT_PATH' should be defined

@@ -20,68 +20,18 @@ inputs:
 outputs:
   current_version:
     description: "The current version before any changes"
-    value: ${{ steps.action_bumper.outputs.current_version }}
   next_version:
     description: "The next version after any changes"
-    value: ${{ steps.action_bumper.outputs.next_version }}
   skip:
     description: "True if release is skipped. e.g. No labels attached to PR."
-    value: ${{ steps.action_bumper.outputs.skip }}
   message:
     description: "Tag message"
-    value: ${{ steps.action_bumper.outputs.message }}
   tag_status:
     description: "Tag status"
-    value: ${{ steps.action_bumper.outputs.tag_status }}
 
 runs:
-  using: "composite"
-  steps:
-    - uses: hmarr/debug-action@v3
-
-    # Potentially to be moved into the golden image
-    - run: |
-        sudo apt update
-        sudo apt install -y jq curl git bash
-        curl https://mise.run | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
-      shell: bash
-
-    # Potentially to be moved into the golden image
-    - run: |
-        mise install
-      shell: bash
-
-    - uses: jwalton/gh-find-current-pr@v1
-      if: ${{ !github.event.act }} # skip during local actions testing
-      id: finder
-      with:
-        state: all
-
-    - id: action_bumper
-      run: ${{ github.action_path }}/action_bumper.sh
-      shell: bash
-      env:
-        INPUT_ADD_LATEST: ${{ inputs.add_latest }}
-        INPUT_BUMP_MAJOR: ${{ inputs.bump_major }}
-        INPUT_BUMP_MINOR: ${{ inputs.bump_minor }}
-        INPUT_BUMP_NONE: ${{ inputs.bump_none }}
-        INPUT_BUMP_PATCH: ${{ inputs.bump_patch }}
-        INPUT_BUMP_SEMVER: ${{ inputs.bump_semver }}
-        INPUT_DEFAULT_BUMP_LEVEL: ${{ inputs.default_bump_level }}
-        INPUT_FAIL_IF_NO_BUMP: ${{ inputs.fail_if_no_bump }}
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_INCLUDE_V: ${{ inputs.include_v }}
-        INPUT_TAG_AS_EMAIL: ${{ inputs.tag_as_email }}
-        INPUT_TAG_AS_USER: ${{ inputs.tag_as_user }}
-
-    - uses: marocchino/sticky-pull-request-comment@v2
-      if: always() && (steps.action_bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null) && ${{ !github.event.act }}
-      with:
-        header: action-bumper
-        number: ${{ steps.finder.outputs.pr }}
-        message: ${{ steps.action_bumper.outputs.tag_status }}
+  using: 'docker'
+  image: 'Dockerfile'
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 branding:

@@ -5,5 +5,5 @@
 --kcov
 --covdir ./.coverage
 --kcov-options "--include-path=. --path-strip-level=3"
---kcov-options "--include-pattern=action_bumper.sh,/lib/"
+--kcov-options "--include-pattern=bumper.sh,/lib/"
 --kcov-options "--exclude-region=KCOV_EXCL_START:KCOV_EXCL_STOP"

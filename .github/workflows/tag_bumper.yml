@@ -25,7 +25,14 @@ jobs:
       INETUM_POLAND_ACTION_BUMPER_DEBUG: ${{ vars.INETUM_POLAND_ACTION_BUMPER_DEBUG }}
       INETUM_POLAND_ACTION_BUMPER_TRACE: ${{ vars.INETUM_POLAND_ACTION_BUMPER_TRACE }}
     steps:
+      - uses: hmarr/debug-action@v3
+
       - uses: actions/checkout@v4
+
+      - uses: jwalton/gh-find-current-pr@v1
+        id: finder
+        with:
+          state: all
 
       - id: bumper
         uses: ./
@@ -34,3 +41,10 @@ jobs:
           bump_semver: true
           add_latest: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && (steps.bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null)
+        with:
+          header: action-bumper
+          number: ${{ steps.finder.outputs.pr }}
+          message: ${{ steps.bumper.outputs.tag_status }}
