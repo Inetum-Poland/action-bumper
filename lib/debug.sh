@@ -2,7 +2,7 @@
 
 init_debug() {
   # -n; True if the length of string is non-zero.
-  if [[ (-n "${INETUM_POLAND_ACTION_BUMPER_DEBUG:-}" && "${INETUM_POLAND_ACTION_BUMPER_DEBUG}" == "true") && "${SHELLSPEC:-}" != "true" ]]; then
+  if [[ (-n "${INETUM_POLAND_ACTION_BUMPER_TRACE:-}" && "${INETUM_POLAND_ACTION_BUMPER_TRACE}" == "true") && "${SHELLSPEC:-}" != "true" ]]; then
     # KCOV_EXCL_START
     set -x
     export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
