@@ -2,7 +2,7 @@ Describe 'lib/helpers.sh'
   Include lib/helpers.sh
   Include lib/debug.sh
 
-  ACTIONS_STEP_DEBUG="true"
+  INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
 
   Describe 'setup_git_config'
     INPUT_TAG_AS_USER="github-actions[bot]"

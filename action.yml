@@ -37,6 +37,9 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - uses: hmarr/debug-action@v3
+
+    # Potentially to be moved into the golden image
     - run: |
         sudo apt update
         sudo apt install -y jq curl git bash
@@ -45,6 +48,7 @@ runs:
         echo "$HOME/.local/share/mise/shims" >> $GITHUB_PATH
       shell: bash
 
+    # Potentially to be moved into the golden image
     - run: |
         mise install
       shell: bash
@@ -52,6 +56,8 @@ runs:
     - uses: jwalton/gh-find-current-pr@v1
       if: ${{ !github.event.act }} # skip during local actions testing
       id: finder
+      with:
+        state: all
 
     - id: action_bumper
       run: ${{ github.action_path }}/action_bumper.sh

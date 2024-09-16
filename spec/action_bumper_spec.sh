@@ -3,7 +3,7 @@
 
 Describe 'action_bumper.sh'
   # GitHub Actions debug
-  ACTIONS_STEP_DEBUG="true"
+  INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
 
   setup() {
     GITHUB_OUTPUT="/tmp/shellspec-${RANDOM}"
