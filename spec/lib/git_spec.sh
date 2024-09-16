@@ -11,6 +11,35 @@ Describe 'lib/git.sh'
     echo "git ${@}"
   }
 
+  Describe 'setup_git_config'
+    GITHUB_ACTOR="github-actions[bot]"
+
+    git() {
+      echo "git ${@}"
+    }
+
+    It 'sets up git config'
+      INPUT_GITHUB_TOKEN=
+
+      When call setup_git_config
+      The status should be success
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+    End
+
+    It 'sets up git config with token'
+      INPUT_GITHUB_TOKEN="XXX"
+      GITHUB_ACTOR="github-actions[bot]"
+      GITHUB_REPOSITORY="inetum-poland/action-bumper"
+
+      When call setup_git_config
+      The status should be success
+      The line 1 of output should eq '> git config user.name "github-actions[bot]"'
+      The line 2 of output should eq '> git config user.email "github-actions[bot]@users.noreply.github.com"'
+      The line 3 of output should eq '> git remote set-url origin "https://github-actions[bot]:XXX@github.com/inetum-poland/action-bumper.git"'
+    End
+  End
+
   Describe 'make_and_push_tag'
     GITHUB_ACTOR="github-actions[bot]"
     INPUT_GITHUB_TOKEN="XXX"

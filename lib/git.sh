@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+setup_git_config() {
+  exec_debug "git config user.name \"${INPUT_TAG_AS_USER:-${GITHUB_ACTOR}}\""
+  exec_debug "git config user.email \"${INPUT_TAG_AS_EMAIL:-${GITHUB_ACTOR}@users.noreply.github.com}\""
+
+  if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
+    exec_debug "git remote set-url origin \"https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\""
+  fi
+}
+
 make_and_push_tag() {
   exec_debug "git tag -a \"${BUMPER_NEXT_VERSION}\" -m \"${BUMPER_TAG_MESSAGE}\""
   exec_debug "git push origin \"${BUMPER_NEXT_VERSION}\""
