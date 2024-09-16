@@ -4,6 +4,11 @@
 
 set -eu
 
+# Debug
+if [[ "${SHELLSPEC:-}" != "true" ]]; then
+  tree .
+fi
+
 # KCOV_EXCL_START
 if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   git config --global --add safe.directory "${GITHUB_WORKSPACE}" || exit
@@ -38,12 +43,6 @@ action_bumper() {
   semver_check
   curl_check
   git_check
-
-  # KCOV_EXCL_START
-  if [[ -v "${DEBUG_GITHUB_EVENT_PATH:-}" ]]; then
-    cat "${GITHUB_EVENT_PATH}"
-  fi
-  # KCOV_EXCL_STOP
 
   setup_git_tag
   setup_vars
