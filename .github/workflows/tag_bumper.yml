@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INETUM_POLAND_ACTION_BUMPER_DEBUG: ${{ vars.INETUM_POLAND_ACTION_BUMPER_DEBUG }}
+      INETUM_POLAND_ACTION_BUMPER_TRACE: ${{ vars.INETUM_POLAND_ACTION_BUMPER_TRACE }}
     steps:
       - uses: actions/checkout@v4
 
