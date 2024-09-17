@@ -1,0 +1,44 @@
+[
+  {
+    "title": "feat(gha): align the gh actions before publish",
+    "merge_commit_sha": "54fa23aef40b58c8f22350c830f7a89dad0121bc",
+
+    "labels": [
+      {
+        "name": "feature"
+      },
+      {
+        "name": "bumper:patch"
+      },
+      {
+        "name": "doc"
+      }
+    ]
+  },
+  {
+    "title": "chore(tf): action-bumper merge test",
+    "merge_commit_sha": "0f9485fc7a911a6ed4acbc0d35c62fc844d83c56",
+
+    "labels": [
+      {
+        "name": "feature"
+      },
+      {
+        "name": "bumper:patch"
+      }
+    ]
+  },
+  {
+    "title": "chore(tf): action-bumper merge test",
+    "merge_commit_sha": "05d0d3ff25ee0a40dac1aba4d48492cf72c4da5d",
+
+    "labels": [
+      {
+        "name": "feature"
+      },
+      {
+        "name": "bumper:patch"
+      }
+    ]
+  }
+]

@@ -13,9 +13,8 @@ fi
 # KCOV_EXCL_STOP
 
 if [[ "${SHELLSPEC:-}" != "true" ]]; then
-  SCRIPT_FOLDER="$(dirname "$(readlink -f "$0")")"
-else
-  SCRIPT_FOLDER="."
+  # SCRIPT_FOLDER="$(dirname "$(readlink -f "$0")")"
+  SCRIPT_FOLDER=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 fi
 
 source "${SCRIPT_FOLDER}/lib/debug.sh"
@@ -56,19 +55,15 @@ action_bumper() {
   setup_git_tag
   setup_vars
 
-  if [[ $(jq -r '.ref' < "${GITHUB_EVENT_PATH}") =~ "refs/tags/" && ${INPUT_BUMP_SEMVER} == "true" ]]; then
-    bump_semver_tags
-    remove_v_prefix
-    setup_git_config
-    make_and_push_semver_tags
-    make_merge_semver_status
-  elif [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
+  if [[ "${ACTION}" =~ ^(labeled|unlabeled|synchronize|opened|reopened)$ ]]; then
     bump_tag
     remove_v_prefix
+    bump_semver_tags
     make_pr_status
   else
     bump_tag
     remove_v_prefix
+    bump_semver_tags
     setup_git_config
     make_and_push_tag
     make_push_status

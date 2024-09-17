@@ -17,12 +17,12 @@ make_and_push_tag() {
     exec_debug "git tag -fa latest \"${BUMPER_NEXT_VERSION}^{commit}\" -m \"${BUMPER_TAG_MESSAGE}\""
     exec_debug "git push --force origin latest"
   fi
-}
 
-make_and_push_semver_tags() {
-  exec_debug "git tag -fa \"${MINOR}\" \"${BUMPER_NEXT_VERSION}^{commit}\" -m \"${BUMPER_TAG_MESSAGE}\""
-  exec_debug "git tag -fa \"${MAJOR}\" \"${BUMPER_NEXT_VERSION}^{commit}\" -m \"${BUMPER_TAG_MESSAGE}\""
+  if [[ "${INPUT_BUMP_SEMVER}" == "true" ]]; then
+    exec_debug "git tag -fa \"${MINOR}\" \"${BUMPER_NEXT_VERSION}^{commit}\" -m \"${BUMPER_TAG_MESSAGE}\""
+    exec_debug "git tag -fa \"${MAJOR}\" \"${BUMPER_NEXT_VERSION}^{commit}\" -m \"${BUMPER_TAG_MESSAGE}\""
 
-  exec_debug "git push --force origin \"${MINOR}\""
-  exec_debug "git push --force origin \"${MAJOR}\""
+    exec_debug "git push --force origin \"${MINOR}\""
+    exec_debug "git push --force origin \"${MAJOR}\""
+  fi
 }

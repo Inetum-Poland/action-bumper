@@ -15,6 +15,8 @@ spec_helper_precheck() {
   fi
 
   # Shellspec debug
+  setenv INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
+  setenv SCRIPT_FOLDER="."
   setenv SHELLSPEC="true"
 }
 
