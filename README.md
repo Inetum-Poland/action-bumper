@@ -102,3 +102,7 @@ jobs:
 ### Note
 
 action-bumper uses push on main event to run workflow instead of pull_request closed (merged) event because github token doesn't have write permission for pull_request from fork repository.
+
+---
+
+Copyright (c) 2024 Inetum Poland.

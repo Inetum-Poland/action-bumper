@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 init_debug() {
   if [[ -n "${DEBUG_GITHUB_EVENT_PATH:-}" ]]; then

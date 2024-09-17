@@ -1,5 +1,0 @@
---container-architecture linux/amd64
---env DEBUG=true
---input dry_run=true
---reuse
--e .act.event.json

@@ -1,10 +1,9 @@
+# Copyright (c) 2024 Inetum Poland.
+
 on:
   push:
     branches:
       - main
-    #! This could be added in the future as a proper use-case would be found.
-    # tags:
-    #   - 'v?*.*.*'
   pull_request:
     branches:
       - main
@@ -20,7 +19,7 @@ permissions:
   contents: write
 
 jobs:
-  tag_bumper:
+  bumper:
     runs-on: ubuntu-latest
     env:
       INETUM_POLAND_ACTION_BUMPER_DEBUG: ${{ vars.INETUM_POLAND_ACTION_BUMPER_DEBUG }}
@@ -44,8 +43,16 @@ jobs:
           bump_latest: true
 
       - uses: marocchino/sticky-pull-request-comment@v2
-        if: always() && (steps.bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null)
+        if: always() && (steps.bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null) && (steps.bumper.outputs.skip != true)
         with:
-          header: action-bumper
+          header: bumper
           number: ${{ steps.finder.outputs.pr }}
           message: ${{ steps.bumper.outputs.tag_status }}
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && (steps.bumper.outputs.tag_status == null || steps.bumper.outputs.skip == true)
+        with:
+          header: bumper
+          delete: true
+
+      #TODO(aamkye): Releaser

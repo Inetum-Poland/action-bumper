@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 source "${SCRIPT_FOLDER}/lib/helpers.sh"
 

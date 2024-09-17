@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 setup_git_config() {
   exec_debug "git config user.name \"${INPUT_BUMP_TAG_AS_USER:-${GITHUB_ACTOR}}\""

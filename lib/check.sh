@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 tool_check() {
-  if ! $2 &> /dev/null; then
-    echo "::error ::$1 is not installed."
+  if ! ${2} &> /dev/null; then
+    echo "::error ::${1} is not installed."
     exit 1
   fi
 }
