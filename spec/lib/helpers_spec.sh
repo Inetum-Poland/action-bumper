@@ -5,14 +5,23 @@ Describe 'lib/helpers.sh'
   INETUM_POLAND_ACTION_BUMPER_DEBUG="true"
 
   Describe 'bump_semver_tags'
-    BUMPER_CURRENT_VERSION="1.2.3"
+    BUMPER_NEXT_VERSION="1.2.3"
 
-    It 'bumps semver tags'
+    Parameters
+      true 1.2.3 1.2 1
+      false '' '' ''
+    End
+    It "bumps semver tags semver: ${1}"
+      INPUT_BUMP_SEMVER="${1}"
+      MAJOR=
+      MINOR=
+      PATCH=
+
       When call bump_semver_tags
       The status should be success
-      The variable 'PATCH' should eq '1.2.3'
-      The variable 'MINOR' should eq '1.2'
-      The variable 'MAJOR' should eq '1'
+      The variable 'PATCH' should eq "${2}"
+      The variable 'MINOR' should eq "${3}"
+      The variable 'MAJOR' should eq "${4}"
     End
   End
 
@@ -184,7 +193,7 @@ Describe 'lib/helpers.sh'
     # Include lib/pr_event.sh
     # Include lib/push_event.sh
 
-    DEBUG_GITHUB_EVENT_PATH="test"
+    DEBUG_GITHUB_EVENT_PATH="spec/lib/push_event"
     GITHUB_API_URL="https://api.github.com"
     GITHUB_EVENT_PATH="test"
     GITHUB_REPOSITORY="inetum-poland/action-bumper"

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+source "${SCRIPT_FOLDER}/lib/push_event.sh"
+source "${SCRIPT_FOLDER}/lib/pr_event.sh"
+
 # KCOV_EXCL_START
 __get_git_tag_from_api() {
   curl --fail -s -H "Authorization: token ${INPUT_GITHUB_TOKEN}" "${1}" | jq -r '[.[] | select(.name != "latest")] | .[0].name'
@@ -39,15 +42,19 @@ __setup_bump_level() {
 }
 
 __setup_vars_from_pr_event() {
-  PR_NUMBER=$(setup_pr_number_from_pr_event)
-  PR_TITLE=$(setup_pr_title_from_pr_event)
-  BUMPER_LABELS=$(setup_labels_from_pr_event)
+  __PR_EVENT=${GITHUB_EVENT_PATH}
+
+  PR_NUMBER=$(setup_pr_number_from_pr_event "${__PR_EVENT}")
+  PR_TITLE=$(setup_pr_title_from_pr_event "${__PR_EVENT}")
+  BUMPER_LABELS=$(setup_labels_from_pr_event "${__PR_EVENT}")
 }
 
 __setup_vars_from_push_event() {
-  PR_NUMBER=$(setup_pr_number_from_push_event)
-  PR_TITLE=$(setup_pr_title_from_push_event)
-  BUMPER_LABELS=$(setup_labels_from_push_event)
+  __PUSH_EVENT=$(list_pulls)
+
+  PR_NUMBER=$(setup_pr_number_from_push_event "${__PUSH_EVENT}")
+  PR_TITLE=$(setup_pr_title_from_push_event "${__PUSH_EVENT}")
+  BUMPER_LABELS=$(setup_labels_from_push_event "${__PUSH_EVENT}")
 }
 
 setup_vars() {
@@ -136,7 +143,9 @@ remove_v_prefix() {
 
 # shellcheck disable=SC2034
 bump_semver_tags() {
-  PATCH="${BUMPER_CURRENT_VERSION}" # v1.2.3
-  MINOR="${PATCH%.*}"               # v1.2
-  MAJOR="${MINOR%.*}"               # v1
+  if [[ "${INPUT_BUMP_SEMVER}" == "true" ]]; then
+    PATCH="${BUMPER_NEXT_VERSION}"    # v1.2.3
+    MINOR="${PATCH%.*}"               # v1.2
+    MAJOR="${MINOR%.*}"               # v1
+  fi
 }

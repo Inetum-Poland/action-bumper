@@ -43,17 +43,20 @@ Describe 'lib/git.sh'
   Describe 'make_and_push_tag'
     GITHUB_ACTOR="github-actions[bot]"
     INPUT_GITHUB_TOKEN="XXX"
+    INPUT_ADD_LATEST="false"
+    INPUT_BUMP_SEMVER="false"
+    MAJOR=1
+    MINOR=1.2
+    PATCH=1.2.3
 
     It 'pushes tag'
-      INPUT_ADD_LATEST="false"
-
       When call make_and_push_tag
       The status should be success
       The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
       The line 2 of output should eq '> git push origin "1.2.3"'
     End
 
-    It 'pushes tag without latest'
+    It 'pushes tag with latest'
       INPUT_ADD_LATEST="true"
 
       When call make_and_push_tag
@@ -61,20 +64,36 @@ Describe 'lib/git.sh'
       The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
       The line 2 of output should eq '> git push origin "1.2.3"'
       The line 3 of output should eq '> git tag -fa latest "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 4 of output should eq '> git push --force origin latest'
     End
-  End
 
-  Describe 'make_and_push_semver_tags'
-    MINOR="1.2"
-    MAJOR="1"
+    It 'pushes tag with semver'
+      INPUT_BUMP_SEMVER="true"
 
-    It 'pushes tag'
-      When call make_and_push_semver_tags
+      When call make_and_push_tag
       The status should be success
-      The line 1 of output should eq '> git tag -fa "1.2" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
-      The line 2 of output should eq '> git tag -fa "1" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
-      The line 3 of output should eq '> git push --force origin "1.2"'
-      The line 4 of output should eq '> git push --force origin "1"'
+      The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
+      The line 2 of output should eq '> git push origin "1.2.3"'
+      The line 3 of output should eq '> git tag -fa "1.2" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 4 of output should eq '> git tag -fa "1" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 5 of output should eq '> git push --force origin "1.2"'
+      The line 6 of output should eq '> git push --force origin "1"'
+    End
+
+    It 'pushes tag with semver and latest'
+      INPUT_ADD_LATEST="true"
+      INPUT_BUMP_SEMVER="true"
+
+      When call make_and_push_tag
+      The status should be success
+      The line 1 of output should eq '> git tag -a "1.2.3" -m "1.2.3: PR #1 - test"'
+      The line 2 of output should eq '> git push origin "1.2.3"'
+      The line 3 of output should eq '> git tag -fa latest "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 4 of output should eq '> git push --force origin latest'
+      The line 5 of output should eq '> git tag -fa "1.2" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 6 of output should eq '> git tag -fa "1" "1.2.3^{commit}" -m "1.2.3: PR #1 - test"'
+      The line 7 of output should eq '> git push --force origin "1.2"'
+      The line 8 of output should eq '> git push --force origin "1"'
     End
   End
 End
