@@ -5,19 +5,33 @@
 set -eu
 
 # KCOV_EXCL_START
+# -n; True if the length of string is non-zero.
+if [[ (-n "${INETUM_POLAND_ACTION_BUMPER_TRACE:-}" && "${INETUM_POLAND_ACTION_BUMPER_TRACE}" == "true") && "${SHELLSPEC:-}" != "true" ]]; then
+  set -x
+  export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+fi
+# KCOV_EXCL_STOP
+
+if [[ "${SHELLSPEC:-}" != "true" ]]; then
+  SCRIPT_FOLDER="$(dirname "$(readlink -f "$0")")"
+else
+  SCRIPT_FOLDER="."
+fi
+
+source "${SCRIPT_FOLDER}/lib/debug.sh"
+source "${SCRIPT_FOLDER}/lib/helpers.sh"
+source "${SCRIPT_FOLDER}/lib/message.sh"
+source "${SCRIPT_FOLDER}/lib/pr_event.sh"
+source "${SCRIPT_FOLDER}/lib/push_event.sh"
+source "${SCRIPT_FOLDER}/lib/check.sh"
+source "${SCRIPT_FOLDER}/lib/git.sh"
+
+# KCOV_EXCL_START
 if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   git config --global --add safe.directory "${GITHUB_WORKSPACE}" || exit
   cd "${GITHUB_WORKSPACE}" || exit
 fi
 # KCOV_EXCL_STOP
-
-source lib/debug.sh
-source lib/helpers.sh
-source lib/message.sh
-source lib/pr_event.sh
-source lib/push_event.sh
-source lib/check.sh
-source lib/git.sh
 
 action_bumper() {
   ACTION=

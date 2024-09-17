@@ -18,7 +18,6 @@ RUN apt update && apt install -y \
   curl \
   git \
   gpg \
-  sudo \
   wget \
   xz-utils
 
@@ -34,7 +33,7 @@ RUN install -dm 775 -o runtime -g runtime /opt/mise
 # set the runtime user to a non-root user and the same user as used by the github runners for actions runs.
 USER runtime
 
-COPY .mise.toml .mise.toml
+COPY --chown=runtime:runtime .mise.toml .mise.toml
 RUN mise install -y --verbose
 
 # Project files
