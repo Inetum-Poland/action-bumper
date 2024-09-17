@@ -22,21 +22,20 @@ _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), 
 
 ## Input
 
-| Name               | Description                                                                                                       | Default             | Required |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
-| default_bump_level | Default bump level if labels are not attached [major, minor, patch, none]. Do nothing if it's empty               |                     | false    |
-| dry_run            | Do not actually tag next version if it's true                                                                     |                     | false    |
-| github_token       | GITHUB_TOKEN to list pull requests and create tags                                                                | ${{ github.token }} | true     |
-| tag_as_user        | Name to use when creating tags                                                                                    |                     | false    |
-| tag_as_email       | Email address to use when creating tags                                                                           |                     | false    |
-| bump_major         | Label name for major bump (bumper:major)                                                                          | bumper:major        | false    |
-| bump_minor         | Label name for minor bump (bumper:minor)                                                                          | bumper:minor        | false    |
-| bump_patch         | Label name for patch bump (bumper:patch)                                                                          | bumper:patch        | false    |
-| bump_none          | Label name for no bump (bumper:none)                                                                              | bumper:none         | false    |
-| fail_if_no_bump    | Fail if no bump label is found                                                                                    | false               | false    |
-| bump_semver        | Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3` | false               | false    |
-| include_v          | Include `v` prefix in tag                                                                                          | true                | false    |
-| add_latest         | Add `latest` tag                                                                                                  | false               | false    |
+| Name                  | Description                                                                                                       | Default             | Required |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
+| bump_default_level    | Default bump level if labels are not attached [major, minor, patch, none]. Do nothing if it's empty               |                     | false    |
+| bump_fail_if_no_level | Fail if no bump label is found                                                                                    | false               | false    |
+| bump_include_v        | Include `v` prefix in tag                                                                                         | true                | false    |
+| bump_latest           | Add `latest` tag                                                                                                  | false               | false    |
+| bump_major            | Label name for major bump (bumper:major)                                                                          | bumper:major        | false    |
+| bump_minor            | Label name for minor bump (bumper:minor)                                                                          | bumper:minor        | false    |
+| bump_none             | Label name for no bump (bumper:none)                                                                              | bumper:none         | false    |
+| bump_patch            | Label name for patch bump (bumper:patch)                                                                          | bumper:patch        | false    |
+| bump_semver           | Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3` | false               | false    |
+| bump_tag_as_email     | Email address to use when creating tags                                                                           |                     | false    |
+| bump_tag_as_user      | Name to use when creating tags                                                                                    |                     | false    |
+| github_token          | GITHUB_TOKEN to list pull requests and create tags                                                                | ${{ github.token }} | true     |
 
 ## Output
 
@@ -54,8 +53,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v?*.*.*'
   pull_request:
     branches:
       - main
@@ -66,22 +63,42 @@ on:
       - reopened
       - synchronize
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   tag_bumper:
     runs-on: ubuntu-latest
+    env:
+      INETUM_POLAND_ACTION_BUMPER_DEBUG: ${{ vars.INETUM_POLAND_ACTION_BUMPER_DEBUG }}
+      INETUM_POLAND_ACTION_BUMPER_TRACE: ${{ vars.INETUM_POLAND_ACTION_BUMPER_TRACE }}
     steps:
+      - uses: hmarr/debug-action@v3
+
       - uses: actions/checkout@v4
-      # Bump version on merging Pull Requests with specific labels.
-      # (bumper:major, bumper:minor, bumper:patch, bumper:none)
-      - id: bumper
-        uses: inetum-poland/action-bumper@v2
+
+      - uses: jwalton/gh-find-current-pr@v1
+        id: finder
         with:
-          fail_if_no_bump: true
-          # If you want this to work, you need to add GitHub App token.
-          bump_semver:     true
-          add_latest:      true
+          state: all
+
+      - id: bumper
+        uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          bump_fail_if_no_level: true
+          bump_semver: true
+          bump_latest: true
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && (steps.bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null)
+        with:
+          header: action-bumper
+          number: ${{ steps.finder.outputs.pr }}
+          message: ${{ steps.bumper.outputs.tag_status }}
 ```
 
 ### Note
 
-action-bumper uses push on master event to run workflow instead of pull_request closed (merged) event because github token doesn't have write permission for pull_request from fork repository.
+action-bumper uses push on main event to run workflow instead of pull_request closed (merged) event because github token doesn't have write permission for pull_request from fork repository.

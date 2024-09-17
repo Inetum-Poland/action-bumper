@@ -22,7 +22,7 @@ __append_github_output() {
 }
 
 __setup_bump_level() {
-  BUMPER_BUMP_LEVEL="${INPUT_DEFAULT_BUMP_LEVEL}"
+  BUMPER_BUMP_LEVEL="${INPUT_BUMP_DEFAULT_LEVEL}"
 
   if echo "${BUMPER_LABELS}" | grep -q "${INPUT_BUMP_NONE}" ; then
     BUMPER_BUMP_LEVEL="none"
@@ -87,7 +87,7 @@ setup_git_tag() {
 
 bump_tag() {
   if [[ -z "${BUMPER_BUMP_LEVEL}" ]]; then
-    if [[ "${INPUT_FAIL_IF_NO_BUMP}" == "true" ]]; then
+    if [[ "${INPUT_BUMP_FAIL_IF_NO_LEVEL}" == "true" ]]; then
       echo "::error ::Job failed as no bump label is found."
       exit 1
     else
@@ -136,7 +136,7 @@ check_missing_tags() {
 }
 
 remove_v_prefix() {
-  if [[ "${INPUT_INCLUDE_V}" == "false" ]]; then
+  if [[ "${INPUT_BUMP_INCLUDE_V}" == "false" ]]; then
     BUMPER_NEXT_VERSION="${BUMPER_NEXT_VERSION//v}"
   fi
 }

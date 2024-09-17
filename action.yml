@@ -3,19 +3,51 @@ description: 'Bump version when merging Pull Request with specific labels (bumpe
 author: 'Inetum-Poland'
 
 inputs:
-  add_latest: { description: "Whether to add `latest` tag", required: false, default: "false" }
-  bump_major: { description: "Label name for major bump (bump:major)", required: false, default: "bumper:major" }
-  bump_minor: { description: "Label name for minor bump (bump:minor)", required: false, default: "bumper:minor" }
-  bump_none: { description: "Label name for no bump (bump:none)", required: false, default: "bumper:none" }
-  bump_patch: { description: "Label name for patch bump (bump:patch)", required: false, default: "bumper:patch" }
-  bump_semver: { description: "Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3`.", required: false, default: "false" }
-  default_bump_level: { description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty", required: false }
-  dry_run: { description: "Do not actually tag next version if it's true", required: false }
-  fail_if_no_bump: { description: "Fail if no bump label is found", required: false, default: "false" }
-  github_token: { description: 'GITHUB_TOKEN to list pull requests and create tags', required: true, default: '${{ github.token }}' }
-  include_v: { description: "Whether to include v in tag name", required: false, default: "true" }
-  tag_as_email: { description: "Email address to use when creating tags", required: false }
-  tag_as_user: { description: "Name to use when creating tags", required: false }
+  bump_default_level:
+    description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty"
+    required: false
+  bump_fail_if_no_level:
+    description: "Fail if no bump label is found"
+    required: false
+    default: "false"
+  bump_include_v:
+    description: "Whether to include v in tag name"
+    required: false
+    default: "true"
+  bump_latest:
+    description: "Whether to add `latest` tag"
+    required: false
+    default: "false"
+  bump_major:
+    description: "Label name for major bump (bump:major)"
+    required: false
+    default: "bumper:major"
+  bump_minor:
+    description: "Label name for minor bump (bump:minor)"
+    required: false
+    default: "bumper:minor"
+  bump_none:
+    description: "Label name for no bump (bump:none)"
+    required: false
+    default: "bumper:none"
+  bump_patch:
+    description: "Label name for patch bump (bump:patch)"
+    required: false
+    default: "bumper:patch"
+  bump_semver:
+    description: "Whether to updates major/minor release tags on a tag push. e.g. Update `v1` and `v1.2` tag when released `v1.2.3`."
+    required: false
+    default: "false"
+  bump_tag_as_email:
+    description: "Email address to use when creating tags"
+    required: false
+  bump_tag_as_user:
+    description: "Name to use when creating tags"
+    required: false
+  github_token:
+    description: 'GITHUB_TOKEN to list pull requests and create tags'
+    required: true
+    default: '${{ github.token }}'
 
 outputs:
   current_version:

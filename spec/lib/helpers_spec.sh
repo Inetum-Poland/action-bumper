@@ -29,7 +29,7 @@ Describe 'lib/helpers.sh'
     BUMPER_NEXT_VERSION="v1.2.3"
 
     It 'removes v prefix'
-      INPUT_INCLUDE_V="true"
+      INPUT_BUMP_INCLUDE_V="true"
 
       When call remove_v_prefix
       The status should be success
@@ -37,7 +37,7 @@ Describe 'lib/helpers.sh'
     End
 
     It 'does not remove v prefix'
-      INPUT_INCLUDE_V="false"
+      INPUT_BUMP_INCLUDE_V="false"
 
       When call remove_v_prefix
       The status should be success
@@ -75,7 +75,7 @@ Describe 'lib/helpers.sh'
     }
 
     It 'skips bump tag'
-      INPUT_FAIL_IF_NO_BUMP="false"
+      INPUT_BUMP_FAIL_IF_NO_LEVEL="false"
       BUMPER_BUMP_LEVEL=
 
       When call bump_tag
@@ -84,7 +84,7 @@ Describe 'lib/helpers.sh'
     End
 
     It 'fails while no bump label is found'
-      INPUT_FAIL_IF_NO_BUMP="true"
+      INPUT_BUMP_FAIL_IF_NO_LEVEL="true"
       BUMPER_BUMP_LEVEL=
 
       When call bump_tag
@@ -93,7 +93,7 @@ Describe 'lib/helpers.sh'
     End
 
     It 'skips bump tag while a "none" bump label is found'
-      INPUT_FAIL_IF_NO_BUMP=
+      INPUT_BUMP_FAIL_IF_NO_LEVEL=
       BUMPER_BUMP_LEVEL="none"
 
       When call bump_tag
@@ -102,7 +102,7 @@ Describe 'lib/helpers.sh'
     End
 
     It 'checks missing tags while bumping'
-      INPUT_FAIL_IF_NO_BUMP=
+      INPUT_BUMP_FAIL_IF_NO_LEVEL=
       BUMPER_BUMP_LEVEL="patch"
       BUMPER_CURRENT_VERSION=
       PR_NUMBER="1"
@@ -125,7 +125,7 @@ Describe 'lib/helpers.sh'
       End
 
       It "bumps tag version $1 $2 -> $3"
-        INPUT_FAIL_IF_NO_BUMP=
+        INPUT_BUMP_FAIL_IF_NO_LEVEL=
         BUMPER_BUMP_LEVEL="$1"
         BUMPER_CURRENT_VERSION="$2"
         PR_NUMBER="1"
@@ -202,7 +202,7 @@ Describe 'lib/helpers.sh'
     INPUT_BUMP_MINOR="bumper:minor"
     INPUT_BUMP_NONE="bumper:none"
     INPUT_BUMP_PATCH="bumper:patch"
-    INPUT_DEFAULT_BUMP_LEVEL="patch"
+    INPUT_BUMP_DEFAULT_LEVEL="patch"
     INPUT_GITHUB_TOKEN=
 
     Context 'pr_event'
