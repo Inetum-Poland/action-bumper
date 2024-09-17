@@ -38,7 +38,7 @@ Describe 'lib/message.sh'
     End
     It "creates a pr status content with semver: ${1}, latest: ${2}"
       INPUT_BUMP_SEMVER="${1}"
-      INPUT_ADD_LATEST="${2}"
+      INPUT_BUMP_LATEST="${2}"
       ACTION="labeled"
 
       When call make_pr_status
@@ -65,7 +65,7 @@ Describe 'lib/message.sh'
     End
     It "creates a push status content with semver: ${1}, latest: ${2}"
       INPUT_BUMP_SEMVER="${1}"
-      INPUT_ADD_LATEST="${2}"
+      INPUT_BUMP_LATEST="${2}"
 
       When call make_push_status
       The status should be success

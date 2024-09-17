@@ -38,10 +38,10 @@ jobs:
       - id: bumper
         uses: ./
         with:
-          fail_if_no_bump: true
-          bump_semver: true
-          add_latest: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          bump_fail_if_no_level: true
+          bump_semver: true
+          bump_latest: true
 
       - uses: marocchino/sticky-pull-request-comment@v2
         if: always() && (steps.bumper.outputs.tag_status != null) && (steps.finder.outputs.pr != null)

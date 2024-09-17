@@ -12,10 +12,8 @@ if [[ (-n "${INETUM_POLAND_ACTION_BUMPER_TRACE:-}" && "${INETUM_POLAND_ACTION_BU
 fi
 # KCOV_EXCL_STOP
 
-if [[ "${SHELLSPEC:-}" != "true" ]]; then
-  # SCRIPT_FOLDER="$(dirname "$(readlink -f "$0")")"
-  SCRIPT_FOLDER=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-fi
+# https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
+SCRIPT_FOLDER=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )
 
 source "${SCRIPT_FOLDER}/lib/debug.sh"
 source "${SCRIPT_FOLDER}/lib/helpers.sh"

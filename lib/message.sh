@@ -19,7 +19,7 @@ make_pr_status() {
     ADDITIONAL_INFO="${ADDITIONAL_INFO} / ${MINOR} / ${MAJOR}"
   fi
 
-  if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
+  if [[ -n "${INPUT_BUMP_LATEST}" && "${INPUT_BUMP_LATEST}" == "true" ]]; then
     ADDITIONAL_INFO="${ADDITIONAL_INFO} / latest"
   fi
 
@@ -38,7 +38,7 @@ make_push_status() {
     ADDITIONAL_INFO="${ADDITIONAL_INFO} / ${MINOR} / ${MAJOR}"
   fi
 
-  if [[ -n "${INPUT_ADD_LATEST}" && "${INPUT_ADD_LATEST}" == "true" ]]; then
+  if [[ -n "${INPUT_BUMP_LATEST}" && "${INPUT_BUMP_LATEST}" == "true" ]]; then
     ADDITIONAL_INFO="${ADDITIONAL_INFO} / latest"
   fi
 

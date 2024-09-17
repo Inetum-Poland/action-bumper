@@ -43,7 +43,7 @@ Describe 'lib/git.sh'
   Describe 'make_and_push_tag'
     GITHUB_ACTOR="github-actions[bot]"
     INPUT_GITHUB_TOKEN="XXX"
-    INPUT_ADD_LATEST="false"
+    INPUT_BUMP_LATEST="false"
     INPUT_BUMP_SEMVER="false"
     MAJOR=1
     MINOR=1.2
@@ -57,7 +57,7 @@ Describe 'lib/git.sh'
     End
 
     It 'pushes tag with latest'
-      INPUT_ADD_LATEST="true"
+      INPUT_BUMP_LATEST="true"
 
       When call make_and_push_tag
       The status should be success
@@ -81,7 +81,7 @@ Describe 'lib/git.sh'
     End
 
     It 'pushes tag with semver and latest'
-      INPUT_ADD_LATEST="true"
+      INPUT_BUMP_LATEST="true"
       INPUT_BUMP_SEMVER="true"
 
       When call make_and_push_tag
