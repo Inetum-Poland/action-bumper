@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 source "${SCRIPT_FOLDER}/lib/push_event.sh"
 source "${SCRIPT_FOLDER}/lib/pr_event.sh"
@@ -69,6 +71,7 @@ setup_vars() {
   __setup_bump_level
 }
 
+
 setup_git_tag() {
   if [[ -n "${DEBUG_GITHUB_EVENT_PATH:-}" ]]; then
     # shellcheck disable=SC2002
@@ -107,7 +110,7 @@ bump_tag() {
     if [[ -z "${BUMPER_CURRENT_VERSION:-}" || "${BUMPER_CURRENT_VERSION:-}" == "null" ]]; then
       check_missing_tags
     else
-      BUMPER_NEXT_VERSION="v$(semver bump "${BUMPER_BUMP_LEVEL}" "${BUMPER_CURRENT_VERSION}")" || exit 1
+      BUMPER_NEXT_VERSION="v$(semver bump "${BUMPER_BUMP_LEVEL}" "${BUMPER_CURRENT_VERSION}")"
     fi
 
     __append_github_output "next_version=${BUMPER_NEXT_VERSION}"

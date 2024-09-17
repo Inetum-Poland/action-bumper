@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-
-# https://github.com/fsaintjacques/semver-tool/tree/master
+#
+# Copyright (c) 2024 Inetum Poland.
 
 set -eu
 

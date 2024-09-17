@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 setup_labels_from_pr_event() {
   jq -r '.pull_request.labels[].name' < "${1}" | tr '\n' ' '

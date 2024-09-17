@@ -75,4 +75,4 @@ repos:
       entry: bash -c 'shellcheck -x **/*.sh'
       language: system
       stages: [pre-commit]
-      files: ^(lib/.*\.sh|action_bumper\.sh)$
+      files: ^(lib/.*\.sh|bumper\.sh)$

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2024 Inetum Poland.
 
 __get_pulls() {
   if [[ -n "${INPUT_GITHUB_TOKEN}" ]]; then
