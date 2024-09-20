@@ -1,1 +1,5 @@
-* @aamkye
+/.github/ @inetum-poland/devops-admins
+
+.coderabbit.yaml @inetum-poland/devops-admins
+.pre-commit-config.yaml @inetum-poland/devops-admins
+.mise.toml @inetum-poland/devops-admins
