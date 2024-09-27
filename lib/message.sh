@@ -14,7 +14,7 @@ make_pr_status() {
   ADDITIONAL_INFO=""
 
   if [[ -n "${BUMPER_CURRENT_VERSION:-}" ]]; then
-    COMPARE="**Changes**: [${BUMPER_CURRENT_VERSION}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION}...${head_label})"
+    COMPARE="**Changes**: [${BUMPER_CURRENT_VERSION:-}...${head_label}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BUMPER_CURRENT_VERSION:-}...${head_label})"
   fi
 
   if [[ -n "${INPUT_BUMP_SEMVER}" && "${INPUT_BUMP_SEMVER}" == "true" ]]; then
