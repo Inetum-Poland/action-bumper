@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Inetum Poland.
-FROM ubuntu:24.10
+FROM ubuntu:25.10
 
 # Workdir
 WORKDIR /opt
