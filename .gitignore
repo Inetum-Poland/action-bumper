@@ -1,2 +1,22 @@
 **/.DS_Store
 .coverage
+
+# Golang migration documentation (local only)
+docs-golang-migration/
+
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test artifacts
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Go mod cache
+vendor/

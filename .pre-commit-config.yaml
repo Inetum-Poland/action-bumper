@@ -64,15 +64,3 @@ repos:
       entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail --no-update'
       language: system
       stages: ["pre-commit", "pre-push"]
-    - id: shellspec
-      name: Check Shellspec
-      entry: bash -c 'shellspec --no-kcov'
-      language: system
-      stages: [pre-commit]
-      pass_filenames: false
-    - id: shellcheck
-      name: Check Shellcheck
-      entry: bash -c 'shellcheck -x **/*.sh'
-      language: system
-      stages: [pre-commit]
-      files: ^(lib/.*\.sh|bumper\.sh)$
