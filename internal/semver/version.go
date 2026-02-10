@@ -1,5 +1,21 @@
 // Copyright (c) 2024 Inetum Poland.
 
+// Package semver provides semantic versioning utilities for parsing, comparing,
+// and bumping version numbers according to the Semantic Versioning 2.0.0 specification.
+//
+// Semantic versions have the format: MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
+//   - MAJOR: Incremented for incompatible API changes
+//   - MINOR: Incremented for backward-compatible functionality additions
+//   - PATCH: Incremented for backward-compatible bug fixes
+//
+// Example usage:
+//
+//	v, err := semver.Parse("v1.2.3")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	next := v.Bump("minor")  // Returns 1.3.0
+//	tag := next.Tag(true)    // Returns "v1.3.0"
 package semver
 
 import (
@@ -37,18 +53,14 @@ func MustParse(s string) *Version {
 	return v
 }
 
-// DefaultVersion returns the default starting version for a given bump level
-func DefaultVersion(level config.BumpLevel) *Version {
-	switch level {
-	case config.BumpLevelMajor:
-		return MustParse("1.0.0")
-	case config.BumpLevelMinor:
-		return MustParse("0.1.0")
-	case config.BumpLevelPatch:
-		return MustParse("0.0.1")
-	default:
-		return MustParse("0.0.0")
-	}
+// DefaultVersion returns the starting version (0.0.0) to be bumped for first release.
+// The caller should call Bump() on this to get the actual first version.
+func DefaultVersion(_ config.BumpLevel) *Version {
+	// Always return 0.0.0 - the Bump() call will produce:
+	// - major: 1.0.0
+	// - minor: 0.1.0
+	// - patch: 0.0.1
+	return MustParse("0.0.0")
 }
 
 // Bump returns a new version with the specified level bumped
@@ -63,7 +75,7 @@ func (v *Version) Bump(level config.BumpLevel) *Version {
 		next = current.IncMinor()
 	case config.BumpLevelPatch:
 		next = current.IncPatch()
-	case config.BumpLevelNone:
+	case config.BumpLevelNone, config.BumpLevelEmpty:
 		// No bump, return current version
 		return &Version{v: current}
 	default:

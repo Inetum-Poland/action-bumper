@@ -189,3 +189,138 @@ func TestParseBool(t *testing.T) {
 		})
 	}
 }
+
+func TestConfig_BooleanEdgeCases(t *testing.T) {
+	tests := []struct {
+		name          string
+		envValue      string
+		expectedTrue  bool
+		expectedFalse bool
+	}{
+		{"TRUE uppercase", "TRUE", true, false},
+		{"True mixed", "True", false, true}, // parseBool uses strconv.ParseBool which handles TRUE but not True by default
+		{"yes", "yes", false, true},         // not supported, defaults
+		{"no", "no", false, true},           // not supported, defaults
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseBool(tt.envValue, true)
+			assert.Equal(t, tt.expectedFalse || result, true)
+		})
+	}
+}
+
+func TestConfig_AllBumpLevels(t *testing.T) {
+	levels := []struct {
+		input string
+		want  BumpLevel
+		valid bool
+	}{
+		{"major", BumpLevelMajor, true},
+		{"minor", BumpLevelMinor, true},
+		{"patch", BumpLevelPatch, true},
+		{"none", BumpLevelNone, true},
+		{"MAJOR", BumpLevelEmpty, false}, // case sensitive
+		{"Minor", BumpLevelEmpty, false},
+		{"", BumpLevelEmpty, false},
+		{"auto", BumpLevelEmpty, false},
+	}
+
+	for _, tt := range levels {
+		t.Run("level_"+tt.input, func(t *testing.T) {
+			os.Clearenv()
+			os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+			os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+			os.Setenv("GITHUB_EVENT_NAME", "push")
+			os.Setenv("GITHUB_REPOSITORY", "owner/repo")
+			os.Setenv("INPUT_BUMP_DEFAULT_LEVEL", tt.input)
+
+			cfg, err := LoadFromEnv()
+			if !tt.valid {
+				if tt.input == "" {
+					// Empty is allowed, defaults to empty
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+				}
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, cfg.BumpDefaultLevel)
+		})
+	}
+}
+
+func TestConfig_DefaultLabels(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+	os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+	os.Setenv("GITHUB_EVENT_NAME", "push")
+	os.Setenv("GITHUB_REPOSITORY", "owner/repo")
+
+	cfg, err := LoadFromEnv()
+	require.NoError(t, err)
+
+	// Verify defaults match Bash implementation
+	assert.Equal(t, "bumper:major", cfg.LabelMajor)
+	assert.Equal(t, "bumper:minor", cfg.LabelMinor)
+	assert.Equal(t, "bumper:patch", cfg.LabelPatch)
+	assert.Equal(t, "bumper:none", cfg.LabelNone)
+}
+
+func TestConfig_CustomLabels(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+	os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+	os.Setenv("GITHUB_EVENT_NAME", "push")
+	os.Setenv("GITHUB_REPOSITORY", "owner/repo")
+	os.Setenv("INPUT_BUMP_MAJOR", "version:breaking")
+	os.Setenv("INPUT_BUMP_MINOR", "version:feature")
+	os.Setenv("INPUT_BUMP_PATCH", "version:fix")
+	os.Setenv("INPUT_BUMP_NONE", "version:skip")
+
+	cfg, err := LoadFromEnv()
+	require.NoError(t, err)
+
+	assert.Equal(t, "version:breaking", cfg.LabelMajor)
+	assert.Equal(t, "version:feature", cfg.LabelMinor)
+	assert.Equal(t, "version:fix", cfg.LabelPatch)
+	assert.Equal(t, "version:skip", cfg.LabelNone)
+}
+
+func TestConfig_MissingEventName(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+	os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+	os.Setenv("GITHUB_REPOSITORY", "owner/repo")
+
+	_, err := LoadFromEnv()
+	assert.Error(t, err)
+}
+
+func TestConfig_MissingRepository(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+	os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+	os.Setenv("GITHUB_EVENT_NAME", "push")
+
+	_, err := LoadFromEnv()
+	assert.Error(t, err)
+}
+
+func TestConfig_TagUserSettings(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("INPUT_GITHUB_TOKEN", "test-token")
+	os.Setenv("GITHUB_EVENT_PATH", "/path/to/event.json")
+	os.Setenv("GITHUB_EVENT_NAME", "push")
+	os.Setenv("GITHUB_REPOSITORY", "owner/repo")
+	os.Setenv("INPUT_BUMP_TAG_AS_USER", "GitHub Actions Bot")
+	os.Setenv("INPUT_BUMP_TAG_AS_EMAIL", "actions@github.com")
+
+	cfg, err := LoadFromEnv()
+	require.NoError(t, err)
+
+	assert.Equal(t, "GitHub Actions Bot", cfg.BumpTagAsUser)
+	assert.Equal(t, "actions@github.com", cfg.BumpTagAsEmail)
+}

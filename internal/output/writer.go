@@ -1,5 +1,15 @@
 // Copyright (c) 2024 Inetum Poland.
 
+// Package output provides functionality for writing GitHub Actions outputs.
+// It handles both single-value and multiline outputs using the GITHUB_OUTPUT
+// file format introduced in GitHub Actions Node.js 16+.
+//
+// Output Format:
+//   - Single value: key=value
+//   - Multiline: key<<EOF\nvalue\nEOF
+//
+// The package falls back to the legacy ::set-output command format when
+// GITHUB_OUTPUT is not set (useful for local testing).
 package output
 
 import (
@@ -27,7 +37,7 @@ func (w *Writer) Set(key, value string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
@@ -50,7 +60,7 @@ func (w *Writer) SetMultiline(key, value string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
@@ -75,5 +85,31 @@ func (w *Writer) SetAll(outputs map[string]string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// WriteSummary writes markdown content to GITHUB_STEP_SUMMARY
+// This appears as a summary in the GitHub Actions UI
+func (w *Writer) WriteSummary(markdown string) error {
+	summaryFile := os.Getenv("GITHUB_STEP_SUMMARY")
+	if summaryFile == "" {
+		// For local testing, print to stdout
+		fmt.Println("--- STEP SUMMARY ---")
+		fmt.Println(markdown)
+		fmt.Println("--- END SUMMARY ---")
+		return nil
+	}
+
+	f, err := os.OpenFile(summaryFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to open summary file: %w", err)
+	}
+	defer f.Close()
+
+	_, err = fmt.Fprintln(f, markdown)
+	if err != nil {
+		return fmt.Errorf("failed to write summary: %w", err)
+	}
+
 	return nil
 }

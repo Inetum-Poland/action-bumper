@@ -3,6 +3,7 @@
 package semver
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Inetum-Poland/action-bumper/internal/config"
@@ -41,21 +42,27 @@ func TestParse(t *testing.T) {
 }
 
 func TestDefaultVersion(t *testing.T) {
+	// DefaultVersion now always returns 0.0.0
+	// The Bump() call produces the correct first version
 	tests := []struct {
-		level config.BumpLevel
-		want  string
+		level      config.BumpLevel
+		wantBase   string
+		wantBumped string
 	}{
-		{config.BumpLevelMajor, "1.0.0"},
-		{config.BumpLevelMinor, "0.1.0"},
-		{config.BumpLevelPatch, "0.0.1"},
-		{config.BumpLevelNone, "0.0.0"},
-		{config.BumpLevelEmpty, "0.0.0"},
+		{config.BumpLevelMajor, "0.0.0", "1.0.0"},
+		{config.BumpLevelMinor, "0.0.0", "0.1.0"},
+		{config.BumpLevelPatch, "0.0.0", "0.0.1"},
+		{config.BumpLevelNone, "0.0.0", "0.0.0"},
+		{config.BumpLevelEmpty, "0.0.0", "0.0.0"},
 	}
 
 	for _, tt := range tests {
 		t.Run(string(tt.level), func(t *testing.T) {
 			got := DefaultVersion(tt.level)
-			assert.Equal(t, tt.want, got.String())
+			assert.Equal(t, tt.wantBase, got.String())
+			// Verify that bumping produces correct first version
+			bumped := got.Bump(tt.level)
+			assert.Equal(t, tt.wantBumped, bumped.String())
 		})
 	}
 }
@@ -180,4 +187,140 @@ func TestMustParse_Panic(t *testing.T) {
 	assert.Panics(t, func() {
 		MustParse("invalid")
 	})
+}
+
+func TestVersion_SortManyVersions(t *testing.T) {
+	// Test sorting 100+ versions correctly
+	versions := make([]*Version, 0, 120)
+
+	// Add versions from v1.0.0 to v10.10.10
+	for major := 1; major <= 10; major++ {
+		for minor := 0; minor <= 10; minor++ {
+			v := MustParse(fmt.Sprintf("v%d.%d.0", major, minor))
+			versions = append(versions, v)
+		}
+	}
+
+	// Find max using comparison
+	var maxVersion *Version
+	for _, v := range versions {
+		if maxVersion == nil || v.GreaterThan(maxVersion) {
+			maxVersion = v
+		}
+	}
+
+	assert.Equal(t, "10.10.0", maxVersion.String())
+}
+
+func TestVersion_NumericSorting(t *testing.T) {
+	// Ensure v1.10.0 > v1.9.0 (numeric, not lexicographic)
+	tests := []struct {
+		v1, v2    string
+		v1Greater bool
+	}{
+		{"v1.10.0", "v1.9.0", true},
+		{"v1.9.0", "v1.10.0", false},
+		{"v2.0.0", "v1.99.99", true},
+		{"v10.0.0", "v9.99.99", true},
+		{"v1.2.10", "v1.2.9", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.v1+"_vs_"+tt.v2, func(t *testing.T) {
+			v1 := MustParse(tt.v1)
+			v2 := MustParse(tt.v2)
+			assert.Equal(t, tt.v1Greater, v1.GreaterThan(v2))
+		})
+	}
+}
+
+func TestVersion_PrereleaseHandling(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		valid   bool
+	}{
+		{"alpha prerelease", "v1.0.0-alpha.1", true},
+		{"beta prerelease", "v1.0.0-beta.2", true},
+		{"rc prerelease", "v1.0.0-rc.1", true},
+		{"simple prerelease", "v1.0.0-pre", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v, err := Parse(tt.version)
+			if tt.valid {
+				assert.NoError(t, err)
+				assert.NotNil(t, v)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestVersion_BuildMetadataHandling(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		valid   bool
+	}{
+		{"simple build", "v1.0.0+build.123", true},
+		{"sha build", "v1.0.0+20130313144700", true},
+		{"complex build", "v1.0.0+build.11.e0f985a", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v, err := Parse(tt.version)
+			if tt.valid {
+				assert.NoError(t, err)
+				assert.NotNil(t, v)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestDefaultVersion_ReturnsZero(t *testing.T) {
+	// After the fix, DefaultVersion should return 0.0.0 for all levels
+	// so that Bump() produces the correct first version
+	tests := []struct {
+		level    config.BumpLevel
+		expected string
+	}{
+		{config.BumpLevelMajor, "0.0.0"},
+		{config.BumpLevelMinor, "0.0.0"},
+		{config.BumpLevelPatch, "0.0.0"},
+		{config.BumpLevelNone, "0.0.0"},
+		{config.BumpLevelEmpty, "0.0.0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.level), func(t *testing.T) {
+			v := DefaultVersion(tt.level)
+			assert.Equal(t, tt.expected, v.String())
+		})
+	}
+}
+
+func TestVersion_FirstBumpProducesCorrectVersion(t *testing.T) {
+	// Verify that bumping from 0.0.0 produces correct first versions
+	tests := []struct {
+		level    config.BumpLevel
+		expected string
+	}{
+		{config.BumpLevelMajor, "1.0.0"},
+		{config.BumpLevelMinor, "0.1.0"},
+		{config.BumpLevelPatch, "0.0.1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.level), func(t *testing.T) {
+			v := DefaultVersion(tt.level)
+			bumped := v.Bump(tt.level)
+			assert.Equal(t, tt.expected, bumped.String())
+		})
+	}
 }

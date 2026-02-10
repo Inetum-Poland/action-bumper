@@ -4,55 +4,88 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/Inetum-Poland/action-bumper/internal/bumper"
 	"github.com/Inetum-Poland/action-bumper/internal/config"
 	"github.com/Inetum-Poland/action-bumper/internal/git"
-	"github.com/Inetum-Poland/action-bumper/internal/logger"
+	"github.com/Inetum-Poland/action-bumper/internal/preflight"
 )
 
 func main() {
 	// Load configuration from environment
 	cfg, err := config.LoadFromEnv()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		slog.Error("Failed to load config", "error", err)
+		os.Exit(1)
 	}
 
 	// Configure logging
-	var appLogger logger.Logger
-	if cfg.Debug {
-		appLogger = logger.NewStandardLogger(os.Stdout, "[action-bumper] ", log.LstdFlags|log.Lshortfile)
-		appLogger.Println("Debug mode enabled")
+	var appLogger *slog.Logger
+	if cfg.Trace {
+		// Trace mode: most verbose, includes everything
+		handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug - 4, // Even more verbose than debug
+		})
+		appLogger = slog.New(handler)
+		appLogger.Info("Trace mode enabled")
+	} else if cfg.Debug {
+		handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		})
+		appLogger = slog.New(handler)
+		appLogger.Info("Debug mode enabled")
 	} else {
-		appLogger = logger.NewDefaultLogger()
+		appLogger = slog.Default()
+	}
+
+	// Run pre-flight checks
+	ctx := context.Background()
+	checker := preflight.NewChecker()
+	results := checker.CheckAll(ctx)
+	for _, r := range results {
+		if r.Passed {
+			appLogger.Debug("Pre-flight check passed", "check", r.Name, "message", r.Message)
+		} else {
+			appLogger.Warn("Pre-flight check failed", "check", r.Name, "message", r.Message, "error", r.Error)
+		}
+	}
+	// Only git check is mandatory; GitHub reachability is informational
+	gitResult := results[0]
+	if !gitResult.Passed {
+		appLogger.Error("Required pre-flight check failed", "check", gitResult.Name)
+		os.Exit(1)
 	}
 
 	// Change to workspace directory if specified
 	if cfg.Workspace != "" {
 		if err := os.Chdir(cfg.Workspace); err != nil {
-			log.Fatalf("Failed to change to workspace directory: %v", err)
+			appLogger.Error("Failed to change to workspace directory", "error", err)
+			os.Exit(1)
 		}
-		appLogger.Printf("Changed to workspace: %s", cfg.Workspace)
+		appLogger.Info("Changed to workspace", "path", cfg.Workspace)
 
 		// Configure git safe directory
 		if err := git.ConfigureSafeDirectory(cfg.Workspace); err != nil {
-			appLogger.Printf("Warning: failed to configure safe directory: %v", err)
+			appLogger.Warn("Failed to configure safe directory", "error", err)
 		}
 	}
 
 	// Create bumper instance
-	ctx := context.Background()
 	b, err := bumper.New(ctx, cfg, appLogger)
 	if err != nil {
-		log.Fatalf("Failed to create bumper: %v", err)
+		appLogger.Error("Failed to create bumper", "error", err)
+		os.Exit(1)
 	}
 
 	// Run the bumper
 	if err := b.Run(ctx); err != nil {
-		log.Fatalf("Bumper failed: %v", err)
+		appLogger.Error("Bumper failed", "error", err)
+		os.Exit(1)
 	}
 
-	appLogger.Println("Bumper completed successfully")
+	appLogger.Info("Bumper completed successfully")
 }

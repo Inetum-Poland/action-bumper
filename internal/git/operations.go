@@ -1,5 +1,23 @@
 // Copyright (c) 2024 Inetum Poland.
 
+// Package git provides low-level git command wrappers for the action-bumper.
+// It executes git commands via exec.Command and handles output parsing.
+//
+// Tag Operations:
+//   - CreateTag: Create new annotated tags (fails if tag exists)
+//   - CreateOrUpdateTag: Create or update tags using -fa flag (for semver/latest)
+//   - DeleteTag: Remove local tags
+//   - PushTag/PushTagForce: Push tags to remote with or without force
+//   - PushTags: Push multiple tags (first without force, rest with force)
+//
+// Configuration:
+//   - ConfigureSafeDirectory: Set up safe.directory for container environments
+//   - ConfigureUser: Set git user.name and user.email
+//   - SetRemoteURL: Configure remote with authentication token
+//
+// Queries:
+//   - GetCurrentCommit: Get HEAD commit SHA
+//   - TagExists: Check if a tag exists locally
 package git
 
 import (
@@ -36,24 +54,29 @@ func ConfigureUser(name, email string) error {
 	return nil
 }
 
-// CreateTag creates an annotated git tag
+// CreateTag creates an annotated git tag (does not force)
 func CreateTag(tag, message string) error {
 	cmd := exec.Command("git", "tag", "-a", tag, "-m", message)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		// Check if tag already exists
-		if strings.Contains(string(output), "already exists") {
-			// Tag exists, update it
-			if err := DeleteTag(tag); err != nil {
-				return err
-			}
-			// Try creating again
-			cmd = exec.Command("git", "tag", "-a", tag, "-m", message)
-			if output, err := cmd.CombinedOutput(); err != nil {
-				return fmt.Errorf("failed to create tag after delete: %w\n%s", err, output)
-			}
-			return nil
-		}
 		return fmt.Errorf("failed to create tag: %w\n%s", err, output)
+	}
+	return nil
+}
+
+// CreateOrUpdateTag creates or updates an annotated git tag using -fa flag
+// This should be used for semver tags (v1, v1.2) and latest tag
+// The refSpec can be a tag name with ^{commit} to target specific commit
+func CreateOrUpdateTag(tag, message, refSpec string) error {
+	// Use -fa to force create/update annotated tag
+	// refSpec should be like "v1.2.3^{commit}" to target the commit of another tag
+	var cmd *exec.Cmd
+	if refSpec != "" {
+		cmd = exec.Command("git", "tag", "-fa", tag, refSpec, "-m", message)
+	} else {
+		cmd = exec.Command("git", "tag", "-fa", tag, "-m", message)
+	}
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create/update tag: %w\n%s", err, output)
 	}
 	return nil
 }
@@ -67,19 +90,37 @@ func DeleteTag(tag string) error {
 	return nil
 }
 
-// PushTag pushes a tag to remote
+// PushTag pushes a tag to remote (without force)
 func PushTag(tag string) error {
-	cmd := exec.Command("git", "push", "origin", tag, "--force")
+	cmd := exec.Command("git", "push", "origin", tag)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to push tag: %w\n%s", err, output)
 	}
 	return nil
 }
 
-// PushTags pushes multiple tags to remote
+// PushTagForce pushes a tag to remote with --force flag
+// Use for semver tags (v1, v1.2) and latest tag that may already exist
+func PushTagForce(tag string) error {
+	cmd := exec.Command("git", "push", "--force", "origin", tag)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to push tag: %w\n%s", err, output)
+	}
+	return nil
+}
+
+// PushTags pushes multiple tags to remote (first tag without force, rest with force)
 func PushTags(tags []string) error {
-	for _, tag := range tags {
-		if err := PushTag(tag); err != nil {
+	for i, tag := range tags {
+		var err error
+		if i == 0 {
+			// Primary version tag - no force
+			err = PushTag(tag)
+		} else {
+			// Semver/latest tags - force push
+			err = PushTagForce(tag)
+		}
+		if err != nil {
 			return err
 		}
 	}
