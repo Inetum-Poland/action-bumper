@@ -1,36 +1,38 @@
 # Copyright (c) 2024 Inetum Poland.
-FROM ubuntu:25.10
 
-# Workdir
-WORKDIR /opt
+# Build stage
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /build
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY cmd/ cmd/
+COPY internal/ internal/
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bumper ./cmd/bumper
+
+# Runtime stage
+FROM alpine:3.21
+
+# Install git (required for tagging operations)
+RUN apk add --no-cache git
 
 # Add user
-RUN groupadd -g 1001 runtime && \
-  useradd --create-home --no-log-init -u 1001 -g 1001 runtime
+RUN addgroup -g 1001 runtime && \
+  adduser -D -u 1001 -G runtime runtime
 
-# Install dependencies
-RUN apt update && apt install -y \
-  bash \
-  curl \
-  git \
-  gpg \
-  jq \
-  wget \
-  xz-utils
+WORKDIR /opt
 
-RUN wget -O /usr/bin/semver \
-  https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver && \
-  chmod +x /usr/bin/semver
+# Copy the binary from builder
+COPY --from=builder /build/bumper /opt/bumper
 
 # set the runtime user to a non-root user and the same user as used by the github runners for actions runs.
 USER runtime
 
-# Project files
-COPY lib lib
-COPY bumper.sh bumper.sh
-
-# SHELL
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
-
 # Initial command
-ENTRYPOINT ["/opt/bumper.sh"]
+ENTRYPOINT ["/opt/bumper"]
