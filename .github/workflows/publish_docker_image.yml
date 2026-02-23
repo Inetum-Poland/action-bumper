@@ -1,8 +1,9 @@
 name: Publish docker image
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - feat/golang-code
     tags:
       - '*'
 
