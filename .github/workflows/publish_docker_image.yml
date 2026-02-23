@@ -2,10 +2,9 @@ name: Publish docker image
 
 on:
   push:
-    branches:
-      - feat/golang-code
     tags:
-      - '*'
+      - 'v*.*.*'
+      - '*.*.*'
 
 env:
   REGISTRY: ghcr.io
