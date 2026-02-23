@@ -65,7 +65,7 @@ outputs:
 
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'Dockerfile.old'
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 branding:
