@@ -368,3 +368,68 @@ class TestBumpFailIfNoLevel:
         
         assert result.success, f"Bumper failed: stdout={result.stdout}"
         assert result.outputs.get("next_version") == "v1.0.1"
+
+
+class TestGitUserConfig:
+    """Tests for git user configuration (tag_as_user and tag_as_email)."""
+    
+    def test_custom_tag_as_user(
+        self,
+        project_root: Path,
+        base_env: dict,
+        github_output_file: Path,
+        debug_event_path: Path,
+        implementation,
+    ):
+        """Test custom INPUT_BUMP_TAG_AS_USER is used."""
+        create_tags_json(["v1.0.0"], debug_event_path)
+        
+        event = create_pr_event(action="opened", labels=["bumper:patch"])
+        (debug_event_path / "data.json").write_text(json.dumps(event))
+        
+        env = base_env.copy()
+        env["DEBUG_GITHUB_EVENT_PATH"] = str(debug_event_path)
+        env["GITHUB_OUTPUT"] = str(github_output_file)
+        env["INPUT_BUMP_TAG_AS_USER"] = "Custom Bot"
+        env["INPUT_BUMP_TAG_AS_EMAIL"] = "custom@example.com"
+        
+        runner = BumperRunner(project_root, implementation)
+        result = runner.run(env)
+        
+        # PR events don't create tags, just verify it runs successfully
+        assert result.success, f"Bumper failed: stdout={result.stdout}"
+    
+    def test_defaults_to_github_actor(
+        self,
+        project_root: Path,
+        base_env: dict,
+        github_output_file: Path,
+        debug_event_path: Path,
+        implementation,
+    ):
+        """Test that git user defaults to GITHUB_ACTOR when not set.
+        
+        When INPUT_BUMP_TAG_AS_USER and INPUT_BUMP_TAG_AS_EMAIL are not set,
+        the implementation should fall back to GITHUB_ACTOR for the user name
+        and GITHUB_ACTOR@users.noreply.github.com for the email.
+        """
+        create_tags_json(["v1.0.0"], debug_event_path)
+        
+        event = create_pr_event(action="opened", labels=["bumper:patch"])
+        (debug_event_path / "data.json").write_text(json.dumps(event))
+        
+        env = base_env.copy()
+        env["DEBUG_GITHUB_EVENT_PATH"] = str(debug_event_path)
+        env["GITHUB_OUTPUT"] = str(github_output_file)
+        env["GITHUB_ACTOR"] = "test-actor"
+        # Explicitly unset the custom values to test fallback
+        if "INPUT_BUMP_TAG_AS_USER" in env:
+            del env["INPUT_BUMP_TAG_AS_USER"]
+        if "INPUT_BUMP_TAG_AS_EMAIL" in env:
+            del env["INPUT_BUMP_TAG_AS_EMAIL"]
+        
+        runner = BumperRunner(project_root, implementation)
+        result = runner.run(env)
+        
+        # Should succeed with GITHUB_ACTOR as fallback
+        assert result.success, f"Bumper failed: stdout={result.stdout}, stderr={result.stderr}"

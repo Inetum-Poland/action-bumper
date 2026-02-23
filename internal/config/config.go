@@ -48,6 +48,7 @@ type Config struct {
 	GitHubEventName string
 	GitHubRepo      string // owner/repo format
 	GitHubSHA       string
+	GitHubActor     string
 	Workspace       string
 
 	// Bump configuration
@@ -97,6 +98,7 @@ func LoadFromEnv() (*Config, error) {
 		GitHubEventName: os.Getenv("GITHUB_EVENT_NAME"),
 		GitHubRepo:      os.Getenv("GITHUB_REPOSITORY"),
 		GitHubSHA:       os.Getenv("GITHUB_SHA"),
+		GitHubActor:     os.Getenv("GITHUB_ACTOR"),
 		Workspace:       os.Getenv("GITHUB_WORKSPACE"),
 
 		// Bump configuration with defaults
@@ -105,8 +107,8 @@ func LoadFromEnv() (*Config, error) {
 		BumpIncludeV:      parseBool(os.Getenv("INPUT_BUMP_INCLUDE_V"), true),
 		BumpLatest:        parseBool(os.Getenv("INPUT_BUMP_LATEST"), false),
 		BumpSemver:        parseBool(os.Getenv("INPUT_BUMP_SEMVER"), false),
-		BumpTagAsEmail:    os.Getenv("INPUT_BUMP_TAG_AS_EMAIL"),
-		BumpTagAsUser:     os.Getenv("INPUT_BUMP_TAG_AS_USER"),
+		BumpTagAsEmail:    getEnvOrDefault("INPUT_BUMP_TAG_AS_EMAIL", os.Getenv("GITHUB_ACTOR")+"@users.noreply.github.com"),
+		BumpTagAsUser:     getEnvOrDefault("INPUT_BUMP_TAG_AS_USER", os.Getenv("GITHUB_ACTOR")),
 
 		// Label names with defaults
 		LabelMajor: getEnvOrDefault("INPUT_BUMP_MAJOR", "bumper:major"),
