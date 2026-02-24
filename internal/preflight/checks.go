@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package preflight provides pre-flight checks for the bumper application.
 // These checks verify that the required external dependencies and environment

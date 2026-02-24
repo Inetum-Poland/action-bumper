@@ -9,11 +9,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/Inetum-Poland/action-bumper/internal/config"
 	"github.com/Inetum-Poland/action-bumper/internal/github"
 	"github.com/Inetum-Poland/action-bumper/internal/semver"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDetermineBumpLevel(t *testing.T) {
@@ -430,10 +431,10 @@ func TestHandlePushEvent_WithValidMergedPR(t *testing.T) {
 
 	currentVersion, _ := semver.Parse("1.0.0")
 	mockClient := github.NewMockClient()
-	mockClient.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+	mockClient.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 		return currentVersion, nil
 	}
-	mockClient.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*github.PullRequest, error) {
+	mockClient.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*github.PullRequest, error) {
 		return &github.PullRequest{
 			Number: 42,
 			Title:  "Feature: Add new capability",
@@ -510,7 +511,7 @@ func TestHandlePushEvent_NoBumpLabel_FailIfNoLevel(t *testing.T) {
 	}
 
 	mockClient := github.NewMockClient()
-	mockClient.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*github.PullRequest, error) {
+	mockClient.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*github.PullRequest, error) {
 		return &github.PullRequest{
 			Number: 42,
 			Title:  "Feature without bump label",
@@ -553,7 +554,7 @@ func TestHandlePushEvent_BumperNoneLabel(t *testing.T) {
 	}
 
 	mockClient := github.NewMockClient()
-	mockClient.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*github.PullRequest, error) {
+	mockClient.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*github.PullRequest, error) {
 		return &github.PullRequest{
 			Number: 42,
 			Title:  "Skip version bump",
@@ -599,7 +600,7 @@ func TestHandlePREvent_WithMockClient(t *testing.T) {
 
 	currentVersion, _ := semver.Parse("2.3.4")
 	mockClient := github.NewMockClient()
-	mockClient.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+	mockClient.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 		return currentVersion, nil
 	}
 
@@ -641,7 +642,7 @@ func TestHandlePREvent_NoTags(t *testing.T) {
 	}
 
 	mockClient := github.NewMockClient()
-	mockClient.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+	mockClient.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 		return nil, errors.New("no tags found")
 	}
 

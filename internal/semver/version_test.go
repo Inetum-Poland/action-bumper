@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 package semver
 
@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Inetum-Poland/action-bumper/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Inetum-Poland/action-bumper/internal/config"
 )
 
 func TestParse(t *testing.T) {

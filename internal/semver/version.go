@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package semver provides semantic versioning utilities for parsing, comparing,
 // and bumping version numbers according to the Semantic Versioning 2.0.0 specification.
@@ -22,8 +22,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Inetum-Poland/action-bumper/internal/config"
 	"github.com/Masterminds/semver/v3"
+
+	"github.com/Inetum-Poland/action-bumper/internal/config"
 )
 
 // Version wraps semver.Version with additional functionality

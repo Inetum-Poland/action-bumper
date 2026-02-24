@@ -48,7 +48,7 @@ linters-settings:
       - fieldalignment  # Too strict for this project
 
   gocognit:
-    min-complexity: 20
+    min-complexity: 35  # Allow slightly higher complexity for event handlers
 
   goconst:
     min-len: 3

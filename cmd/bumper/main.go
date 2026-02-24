@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 package main
 
@@ -23,7 +23,8 @@ func main() {
 
 	// Configure logging
 	var appLogger *slog.Logger
-	if cfg.Trace {
+	switch {
+	case cfg.Trace:
 		// Trace mode: most verbose, includes everything
 		handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			AddSource: true,
@@ -31,14 +32,14 @@ func main() {
 		})
 		appLogger = slog.New(handler)
 		appLogger.Info("Trace mode enabled")
-	} else if cfg.Debug {
+	case cfg.Debug:
 		handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			AddSource: true,
 			Level:     slog.LevelDebug,
 		})
 		appLogger = slog.New(handler)
 		appLogger.Info("Debug mode enabled")
-	} else {
+	default:
 		appLogger = slog.Default()
 	}
 
@@ -62,15 +63,15 @@ func main() {
 
 	// Change to workspace directory if specified
 	if cfg.Workspace != "" {
-		if err := os.Chdir(cfg.Workspace); err != nil {
-			appLogger.Error("Failed to change to workspace directory", "error", err)
+		if chErr := os.Chdir(cfg.Workspace); chErr != nil {
+			appLogger.Error("Failed to change to workspace directory", "error", chErr)
 			os.Exit(1)
 		}
 		appLogger.Info("Changed to workspace", "path", cfg.Workspace)
 
 		// Configure git safe directory
-		if err := git.ConfigureSafeDirectory(cfg.Workspace); err != nil {
-			appLogger.Warn("Failed to configure safe directory", "error", err)
+		if safeErr := git.ConfigureSafeDirectory(cfg.Workspace); safeErr != nil {
+			appLogger.Warn("Failed to configure safe directory", "error", safeErr)
 		}
 	}
 

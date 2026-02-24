@@ -105,4 +105,4 @@ action-bumper uses push on main event to run workflow instead of pull_request cl
 
 ---
 
-Copyright (c) 2024 Inetum Poland.
+Copyright (c) 2024-2026 Inetum Poland.

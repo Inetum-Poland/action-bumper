@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package git provides interfaces and implementations for git operations.
 package git
@@ -125,17 +125,17 @@ type MockOperator struct {
 func NewMockOperator() *MockOperator {
 	return &MockOperator{
 		Calls:                      make(map[string][]interface{}),
-		ConfigureSafeDirectoryFunc: func(dir string) error { return nil },
-		ConfigureUserFunc:          func(name, email string) error { return nil },
-		CreateTagFunc:              func(tag, message string) error { return nil },
-		CreateOrUpdateTagFunc:      func(tag, message, refSpec string) error { return nil },
-		DeleteTagFunc:              func(tag string) error { return nil },
-		PushTagFunc:                func(tag string) error { return nil },
-		PushTagForceFunc:           func(tag string) error { return nil },
-		PushTagsFunc:               func(tags []string) error { return nil },
-		SetRemoteURLFunc:           func(token, repo string) error { return nil },
+		ConfigureSafeDirectoryFunc: func(_ string) error { return nil },
+		ConfigureUserFunc:          func(_, _ string) error { return nil },
+		CreateTagFunc:              func(_, _ string) error { return nil },
+		CreateOrUpdateTagFunc:      func(_, _, _ string) error { return nil },
+		DeleteTagFunc:              func(_ string) error { return nil },
+		PushTagFunc:                func(_ string) error { return nil },
+		PushTagForceFunc:           func(_ string) error { return nil },
+		PushTagsFunc:               func(_ []string) error { return nil },
+		SetRemoteURLFunc:           func(_, _ string) error { return nil },
 		GetCurrentCommitFunc:       func() (string, error) { return "abc123", nil },
-		TagExistsFunc:              func(tag string) bool { return false },
+		TagExistsFunc:              func(_ string) bool { return false },
 	}
 }
 

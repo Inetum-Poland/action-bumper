@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Inetum Poland.
+# Copyright (c) 2024-2026 Inetum Poland.
 
 name: 'bumper - Bump version when merging Pull Request with specific labels. Bump versions on tag push.'
 description: 'Bump version when merging Pull Request with specific labels (bumper:major, bumper:minor, bumper:patch, bumper:none)'

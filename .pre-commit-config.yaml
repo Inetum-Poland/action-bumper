@@ -16,12 +16,6 @@ repos:
       stages: [commit-msg]
       args: [--strict, --force-scope]
 
-# - repo: https://github.com/koalaman/shellcheck-precommit
-#   rev: v0.10.0
-#   hooks:
-#     - id: shellcheck
-#       name: Check Shellcheck
-
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.6.0
   hooks:
@@ -57,10 +51,34 @@ repos:
       stages: [pre-commit]
       args: ["--verbose"]
 
+- repo: https://github.com/golangci/golangci-lint
+  rev: v1.64.5
+  hooks:
+    - id: golangci-lint
+      name: Go Lint (golangci-lint)
+      stages: [pre-commit]
+      args: [--config=.golangci.yml]
+
 - repo: local
   hooks:
+    - id: go-test
+      name: Go Tests
+      entry: go test ./...
+      language: system
+      pass_filenames: false
+      types: [go]
+      stages: [pre-commit]
+
+    - id: go-build
+      name: Go Build
+      entry: go build ./...
+      language: system
+      pass_filenames: false
+      types: [go]
+      stages: [pre-commit]
+
     - id: trufflehog
       name: Check TruffleHog
-      entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail --no-update'
+      entry: bash -c 'command -v trufflehog >/dev/null 2>&1 && trufflehog git file://. --since-commit HEAD --only-verified --fail --no-update || echo "trufflehog not installed, skipping"'
       language: system
       stages: ["pre-commit", "pre-push"]

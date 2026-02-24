@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package git provides low-level git command wrappers for the action-bumper.
 // It executes git commands via exec.Command and handles output parsing.

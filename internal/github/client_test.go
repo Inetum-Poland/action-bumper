@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 package github
 
@@ -6,9 +6,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/Inetum-Poland/action-bumper/internal/config"
 	"github.com/Inetum-Poland/action-bumper/internal/semver"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClient_ValidConfig(t *testing.T) {
@@ -111,7 +112,7 @@ func TestMockClient_GetLatestTag(t *testing.T) {
 		{
 			name: "returns version",
 			setupMock: func(m *MockClient) {
-				m.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+				m.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 					return semver.MustParse("1.2.3"), nil
 				}
 			},
@@ -121,7 +122,7 @@ func TestMockClient_GetLatestTag(t *testing.T) {
 		{
 			name: "returns nil when no tags",
 			setupMock: func(m *MockClient) {
-				m.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+				m.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 					return nil, nil
 				}
 			},
@@ -131,7 +132,7 @@ func TestMockClient_GetLatestTag(t *testing.T) {
 		{
 			name: "returns error",
 			setupMock: func(m *MockClient) {
-				m.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+				m.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 					return nil, assert.AnError
 				}
 			},
@@ -173,7 +174,7 @@ func TestMockClient_GetMergedPRByCommitSHA(t *testing.T) {
 		{
 			name: "returns PR",
 			setupMock: func(m *MockClient) {
-				m.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*PullRequest, error) {
+				m.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*PullRequest, error) {
 					return &PullRequest{
 						Number: 42,
 						Title:  "Test PR",
@@ -192,7 +193,7 @@ func TestMockClient_GetMergedPRByCommitSHA(t *testing.T) {
 		{
 			name: "returns nil when no PR found",
 			setupMock: func(m *MockClient) {
-				m.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*PullRequest, error) {
+				m.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*PullRequest, error) {
 					return nil, nil
 				}
 			},
@@ -203,7 +204,7 @@ func TestMockClient_GetMergedPRByCommitSHA(t *testing.T) {
 		{
 			name: "returns error",
 			setupMock: func(m *MockClient) {
-				m.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*PullRequest, error) {
+				m.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*PullRequest, error) {
 					return nil, assert.AnError
 				}
 			},

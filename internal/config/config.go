@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package config provides configuration management for the action-bumper GitHub Action.
 // It handles loading configuration from environment variables, including GitHub Actions

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 package github
 
@@ -34,10 +34,10 @@ type MockClient struct {
 func NewMockClient() *MockClient {
 	return &MockClient{
 		Calls: make(map[string][]interface{}),
-		GetLatestTagFunc: func(ctx context.Context) (*semver.Version, error) {
+		GetLatestTagFunc: func(_ context.Context) (*semver.Version, error) {
 			return nil, nil
 		},
-		GetMergedPRByCommitSHAFunc: func(ctx context.Context, sha string) (*PullRequest, error) {
+		GetMergedPRByCommitSHAFunc: func(_ context.Context, _ string) (*PullRequest, error) {
 			return nil, nil
 		},
 	}
@@ -61,7 +61,7 @@ func (m *MockClient) GetMergedPRByCommitSHA(ctx context.Context, sha string) (*P
 
 // WithLatestTag sets the mock to return a specific version from GetLatestTag.
 func (m *MockClient) WithLatestTag(v *semver.Version) *MockClient {
-	m.GetLatestTagFunc = func(ctx context.Context) (*semver.Version, error) {
+	m.GetLatestTagFunc = func(_ context.Context) (*semver.Version, error) {
 		return v, nil
 	}
 	return m
@@ -69,7 +69,7 @@ func (m *MockClient) WithLatestTag(v *semver.Version) *MockClient {
 
 // WithMergedPR sets the mock to return a specific PR from GetMergedPRByCommitSHA.
 func (m *MockClient) WithMergedPR(pr *PullRequest) *MockClient {
-	m.GetMergedPRByCommitSHAFunc = func(ctx context.Context, sha string) (*PullRequest, error) {
+	m.GetMergedPRByCommitSHAFunc = func(_ context.Context, _ string) (*PullRequest, error) {
 		return pr, nil
 	}
 	return m

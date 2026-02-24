@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package output provides functionality for writing GitHub Actions outputs.
 // It handles both single-value and multiline outputs using the GITHUB_OUTPUT

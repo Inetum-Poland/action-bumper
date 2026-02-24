@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Inetum Poland.
+// Copyright (c) 2024-2026 Inetum Poland.
 
 // Package github provides GitHub API client functionality for the action-bumper.
 // It handles authentication, tag management, pull request queries, and event parsing.
@@ -19,10 +19,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Inetum-Poland/action-bumper/internal/config"
-	"github.com/Inetum-Poland/action-bumper/internal/semver"
 	"github.com/google/go-github/v57/github"
 	"golang.org/x/oauth2"
+
+	"github.com/Inetum-Poland/action-bumper/internal/config"
+	"github.com/Inetum-Poland/action-bumper/internal/semver"
 )
 
 const (
