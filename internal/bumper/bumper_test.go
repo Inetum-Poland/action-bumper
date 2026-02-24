@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/Inetum-Poland/action-bumper/internal/config"
+	"github.com/Inetum-Poland/action-bumper/internal/git"
 	"github.com/Inetum-Poland/action-bumper/internal/github"
 	"github.com/Inetum-Poland/action-bumper/internal/semver"
 )
@@ -443,13 +444,11 @@ func TestHandlePushEvent_WithValidMergedPR(t *testing.T) {
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	b := NewWithClient(cfg, mockClient, logger)
+	mockGit := git.NewMockOperator()
+	b := NewWithClientAndGit(cfg, mockClient, mockGit, logger)
 
-	// Note: handlePushEvent will fail when it tries to run git commands
-	// (ConfigureUser, SetRemoteURL, etc.) because we're not in a git repo.
-	// But we can verify the mock was called correctly.
+	// Run with mock git - no real git commands will be executed
 	_ = b.Run(context.Background())
-
 	// Verify the mock was called
 	assert.Contains(t, mockClient.Calls, "GetMergedPRByCommitSHA")
 }

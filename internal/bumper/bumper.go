@@ -36,6 +36,7 @@ import (
 type Bumper struct {
 	cfg    *config.Config
 	client github.ClientInterface
+	git    git.Operator
 	output *output.Writer
 	logger *slog.Logger
 }
@@ -52,6 +53,7 @@ func New(ctx context.Context, cfg *config.Config, log *slog.Logger) (*Bumper, er
 	return &Bumper{
 		cfg:    cfg,
 		client: client,
+		git:    git.NewOperator(),
 		output: output.NewWriter(),
 		logger: log,
 	}, nil
@@ -63,6 +65,19 @@ func NewWithClient(cfg *config.Config, client github.ClientInterface, log *slog.
 	return &Bumper{
 		cfg:    cfg,
 		client: client,
+		git:    git.NewOperator(),
+		output: output.NewWriter(),
+		logger: log,
+	}
+}
+
+// NewWithClientAndGit creates a new Bumper instance with custom GitHub and Git clients.
+// This is useful for testing with mock clients.
+func NewWithClientAndGit(cfg *config.Config, client github.ClientInterface, gitOp git.Operator, log *slog.Logger) *Bumper {
+	return &Bumper{
+		cfg:    cfg,
+		client: client,
+		git:    gitOp,
 		output: output.NewWriter(),
 		logger: log,
 	}
@@ -244,12 +259,12 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	nextVersion := currentVersion.Bump(bumpLevel)
 
 	// Configure git
-	if err := git.ConfigureUser(b.cfg.BumpTagAsUser, b.cfg.BumpTagAsEmail); err != nil {
+	if err := b.git.ConfigureUser(b.cfg.BumpTagAsUser, b.cfg.BumpTagAsEmail); err != nil {
 		return fmt.Errorf("failed to configure git user: %w", err)
 	}
 
 	// Set remote URL with authentication
-	if err := git.SetRemoteURL(b.cfg.GitHubToken, b.cfg.GitHubRepo); err != nil {
+	if err := b.git.SetRemoteURL(b.cfg.GitHubToken, b.cfg.GitHubRepo); err != nil {
 		return fmt.Errorf("failed to set remote URL: %w", err)
 	}
 
@@ -263,7 +278,7 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	tags := []string{nextVersion.FullTag(b.cfg.BumpIncludeV)}
 
 	// Create main tag
-	if err := git.CreateTag(tags[0], tagMessage); err != nil {
+	if err := b.git.CreateTag(tags[0], tagMessage); err != nil {
 		return fmt.Errorf("failed to create tag: %w", err)
 	}
 
@@ -273,13 +288,13 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 		minorTag := nextVersion.MinorTag(b.cfg.BumpIncludeV)
 		refSpec := fmt.Sprintf("%s^{commit}", tags[0])
 
-		if err := git.CreateOrUpdateTag(majorTag, tagMessage, refSpec); err != nil {
+		if err := b.git.CreateOrUpdateTag(majorTag, tagMessage, refSpec); err != nil {
 			b.logger.Warn("Failed to create major tag", "error", err)
 		} else {
 			tags = append(tags, majorTag)
 		}
 
-		if err := git.CreateOrUpdateTag(minorTag, tagMessage, refSpec); err != nil {
+		if err := b.git.CreateOrUpdateTag(minorTag, tagMessage, refSpec); err != nil {
 			b.logger.Warn("Failed to create minor tag", "error", err)
 		} else {
 			tags = append(tags, minorTag)
@@ -290,7 +305,7 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	if b.cfg.BumpLatest {
 		latestTag := "latest"
 		refSpec := fmt.Sprintf("%s^{commit}", tags[0])
-		if err := git.CreateOrUpdateTag(latestTag, tagMessage, refSpec); err != nil {
+		if err := b.git.CreateOrUpdateTag(latestTag, tagMessage, refSpec); err != nil {
 			b.logger.Warn("Failed to create latest tag", "error", err)
 		} else {
 			tags = append(tags, latestTag)
@@ -298,7 +313,7 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	}
 
 	// Push all tags
-	if err := git.PushTags(tags); err != nil {
+	if err := b.git.PushTags(tags); err != nil {
 		return fmt.Errorf("failed to push tags: %w", err)
 	}
 
