@@ -117,18 +117,18 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 
 	// Get bump level from labels
 	bumpLevel := b.determineBumpLevel(event.PullRequest.Labels)
-	b.trace(ctx, "Determined bump level", "level", bumpLevel)
+	b.trace(ctx, "Determined bump level from labels", "level", bumpLevel)
 
-	// Use default if no level found from labels
-	if bumpLevel == config.BumpLevelEmpty {
-		bumpLevel = b.cfg.BumpDefaultLevel
-		b.trace(ctx, "Using default level", "level", bumpLevel)
-	}
-
-	// Check if bump level is required (after applying default)
+	// Enforced mode requires an explicit bump label on the PR.
 	if bumpLevel == config.BumpLevelEmpty && b.cfg.BumpFailIfNoLevel {
 		fmt.Println("::error ::Job failed as no bump label is found.")
 		return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
+	}
+
+	// Use default only when label enforcement is not enabled.
+	if bumpLevel == config.BumpLevelEmpty {
+		bumpLevel = b.cfg.BumpDefaultLevel
+		b.trace(ctx, "Using default level", "level", bumpLevel)
 	}
 
 	// If still empty or none, skip
@@ -207,6 +207,10 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 
 	mergedPR, err := b.client.GetMergedPRByCommitSHA(ctx, mergeCommitSHA)
 	if err != nil {
+		if b.cfg.BumpFailIfNoLevel {
+			fmt.Println("::error ::Job failed as no bump label is found.")
+			return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true: %w", err)
+		}
 		b.logger.Warn("Failed to find merged PR, using default level", "error", err, "sha", mergeCommitSHA)
 		bumpLevel = b.cfg.BumpDefaultLevel
 	} else {
@@ -217,6 +221,10 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 		// Get bump level from PR labels
 		bumpLevel = b.determineBumpLevel(mergedPR.Labels)
 		b.trace(ctx, "Determined bump level from PR", "level", bumpLevel)
+		if bumpLevel == config.BumpLevelEmpty && b.cfg.BumpFailIfNoLevel {
+			fmt.Println("::error ::Job failed as no bump label is found.")
+			return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
+		}
 		if bumpLevel == config.BumpLevelEmpty {
 			bumpLevel = b.cfg.BumpDefaultLevel
 			b.trace(ctx, "Using default level", "level", bumpLevel)
@@ -225,10 +233,6 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 
 	// Handle skip scenarios
 	if bumpLevel == config.BumpLevelEmpty {
-		if b.cfg.BumpFailIfNoLevel {
-			fmt.Println("::error ::Job failed as no bump label is found.")
-			return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
-		}
 		b.logger.Info("No bump level, skipping")
 		if setErr := b.output.Set("skip", "true"); setErr != nil {
 			return fmt.Errorf("failed to set skip output: %w", setErr)

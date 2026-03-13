@@ -182,7 +182,7 @@ func TestHandlePREvent_WithDefaultLevel(t *testing.T) {
 	assert.Contains(t, mockClient.Calls, "GetLatestTag")
 }
 
-// TestHandlePREvent_FailIfNoLevelWithDefaultLevel tests that default level prevents failure
+// TestHandlePREvent_FailIfNoLevelWithDefaultLevel tests that enforcement requires an explicit label.
 func TestHandlePREvent_FailIfNoLevelWithDefaultLevel(t *testing.T) {
 	tmpDir := t.TempDir()
 	eventFile := tmpDir + "/event.json"
@@ -222,8 +222,8 @@ func TestHandlePREvent_FailIfNoLevelWithDefaultLevel(t *testing.T) {
 
 	err = b.Run(context.Background())
 
-	// Should NOT fail because default level is set
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no bump level label found")
 }
 
 // TestVersionTagGeneration tests version tag string generation
