@@ -158,22 +158,6 @@ func TestWrapFunctions(t *testing.T) {
 	}
 }
 
-func TestNoLevelError(t *testing.T) {
-	err := NewNoLevelError()
-
-	assert.True(t, IsNoLevelError(err))
-	assert.True(t, IsBumpError(err))
-	assert.Contains(t, err.Error(), "no bump level specified")
-}
-
-func TestSkipBumpError(t *testing.T) {
-	err := NewSkipBumpError("bumper:none label")
-
-	assert.True(t, IsSkipBumpError(err))
-	assert.True(t, IsBumpError(err))
-	assert.Equal(t, "bumper:none label", err.Reason)
-}
-
 func TestIsCheckers_NilAndOther(t *testing.T) {
 	stdErr := errors.New("standard error")
 
@@ -183,6 +167,4 @@ func TestIsCheckers_NilAndOther(t *testing.T) {
 	assert.False(t, IsSemverError(stdErr))
 	assert.False(t, IsEventError(stdErr))
 	assert.False(t, IsBumpError(stdErr))
-	assert.False(t, IsNoLevelError(stdErr))
-	assert.False(t, IsSkipBumpError(stdErr))
 }

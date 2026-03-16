@@ -55,9 +55,15 @@ func main() {
 		}
 	}
 	// Only git check is mandatory; GitHub reachability is informational
-	gitResult := results[0]
-	if !gitResult.Passed {
-		appLogger.Error("Required pre-flight check failed", "check", gitResult.Name)
+	gitPassed := false
+	for _, r := range results {
+		if r.Name == "git-available" {
+			gitPassed = r.Passed
+			break
+		}
+	}
+	if !gitPassed {
+		appLogger.Error("Required pre-flight check failed", "check", "git-available")
 		os.Exit(1)
 	}
 

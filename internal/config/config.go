@@ -161,8 +161,6 @@ func (b BumpLevel) IsValid() bool {
 	switch b {
 	case BumpLevelMajor, BumpLevelMinor, BumpLevelPatch, BumpLevelNone:
 		return true
-	case BumpLevelEmpty:
-		return false
 	default:
 		return false
 	}

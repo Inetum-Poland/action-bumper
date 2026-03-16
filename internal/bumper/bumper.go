@@ -143,11 +143,11 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 	if err != nil {
 		b.logger.Warn("Failed to get latest tag", "error", err)
 		// Use default version
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	} else if currentVersion == nil {
 		// No tags exist yet - use default version
 		b.logger.Info("No existing tags found, using default version")
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	}
 
 	// Calculate next version
@@ -266,7 +266,7 @@ func (b *Bumper) requireExplicitBumpLabel(bumpLevel config.BumpLevel, cause erro
 		return nil
 	}
 
-	fmt.Println("::error ::Job failed as no bump label is found.")
+	b.logger.Error("Job failed as no bump label is found")
 	if cause != nil {
 		return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true: %w", cause)
 	}
@@ -297,10 +297,10 @@ func (b *Bumper) createAndPushTags(ctx context.Context, bumpLevel config.BumpLev
 	currentVersion, err = b.client.GetLatestTag(ctx)
 	if err != nil {
 		b.logger.Warn("No existing tags, using default")
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	} else if currentVersion == nil {
 		b.logger.Info("No existing tags found, using default version")
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	}
 
 	nextVersion = currentVersion.Bump(bumpLevel)
@@ -372,34 +372,29 @@ func (b *Bumper) createVersionTags(version *semver.Version, tagMessage string) (
 }
 
 // determineBumpLevel determines the bump level from PR labels.
-// Matches Bash behavior: processes in order none → patch → minor → major,
-// with later matches taking priority.
+// Processes all labels in a single pass, highest priority wins (major > minor > patch > none).
 func (b *Bumper) determineBumpLevel(labels []github.Label) config.BumpLevel {
+	priorities := map[string]int{
+		b.cfg.LabelNone:  1,
+		b.cfg.LabelPatch: 2,
+		b.cfg.LabelMinor: 3,
+		b.cfg.LabelMajor: 4,
+	}
+	bumpLevels := map[string]config.BumpLevel{
+		b.cfg.LabelNone:  config.BumpLevelNone,
+		b.cfg.LabelPatch: config.BumpLevelPatch,
+		b.cfg.LabelMinor: config.BumpLevelMinor,
+		b.cfg.LabelMajor: config.BumpLevelMajor,
+	}
+
 	level := config.BumpLevelEmpty
-
-	// Check labels in priority order (lowest to highest)
-	// Each match overwrites the previous, so highest priority wins
+	currentPriority := 0
 	for _, label := range labels {
-		if label.Name == b.cfg.LabelNone {
-			level = config.BumpLevelNone
+		if p, ok := priorities[label.Name]; ok && p > currentPriority {
+			currentPriority = p
+			level = bumpLevels[label.Name]
 		}
 	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelPatch {
-			level = config.BumpLevelPatch
-		}
-	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelMinor {
-			level = config.BumpLevelMinor
-		}
-	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelMajor {
-			level = config.BumpLevelMajor
-		}
-	}
-
 	return level
 }
 
