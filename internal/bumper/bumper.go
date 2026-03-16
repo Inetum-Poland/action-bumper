@@ -123,11 +123,8 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 		return err
 	}
 
-	rawBumpLevel := bumpLevel
 	bumpLevel = b.applyDefaultBumpLevel(bumpLevel)
-	if rawBumpLevel == config.BumpLevelEmpty && bumpLevel != config.BumpLevelEmpty {
-		b.trace(ctx, "Using default level", "level", bumpLevel)
-	}
+	b.trace(ctx, "Effective bump level", "level", bumpLevel)
 
 	// If still empty or none, skip
 	if bumpLevel == config.BumpLevelEmpty || bumpLevel == config.BumpLevelNone {
@@ -258,11 +255,8 @@ func (b *Bumper) resolvePushBumpLevel(ctx context.Context, mergeCommitSHA string
 		return config.BumpLevelEmpty, 0, "", guardErr
 	}
 
-	rawBumpLevel := bumpLevel
 	bumpLevel = b.applyDefaultBumpLevel(bumpLevel)
-	if rawBumpLevel == config.BumpLevelEmpty && bumpLevel != config.BumpLevelEmpty {
-		b.trace(ctx, "Using default level", "level", bumpLevel)
-	}
+	b.trace(ctx, "Effective bump level", "level", bumpLevel)
 
 	return bumpLevel, mergedPR.Number, mergedPR.Title, nil
 }
@@ -288,17 +282,11 @@ func (b *Bumper) applyDefaultBumpLevel(bumpLevel config.BumpLevel) config.BumpLe
 }
 
 func (b *Bumper) handlePushSkip(bumpLevel config.BumpLevel) (bool, error) {
-	switch bumpLevel {
-	case config.BumpLevelEmpty:
-		b.logger.Info("No bump level, skipping")
-	case config.BumpLevelNone:
-		b.logger.Info("Bump level is 'none', skipping")
-	case config.BumpLevelMajor, config.BumpLevelMinor, config.BumpLevelPatch:
-		return false, nil
-	default:
+	if bumpLevel != config.BumpLevelEmpty && bumpLevel != config.BumpLevelNone {
 		return false, nil
 	}
 
+	b.logger.Info("Skipping bump", "level", bumpLevel)
 	if err := b.output.Set("skip", "true"); err != nil {
 		return false, fmt.Errorf("failed to set skip output: %w", err)
 	}
