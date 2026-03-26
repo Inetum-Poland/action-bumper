@@ -1,8 +1,6 @@
 module github.com/Inetum-Poland/action-bumper
 
-go 1.24.0
-
-toolchain go1.24.12
+go 1.26.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
