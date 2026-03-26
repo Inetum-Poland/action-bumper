@@ -24,8 +24,8 @@ _Original projects: [action-bumpr](https://github.com/haya14busa/action-bumpr), 
 
 | Name                  | Description                                                                                                       | Default             | Required |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
-| bump_default_level    | Default bump level if labels are not attached [major, minor, patch, none]. Do nothing if it's empty               |                     | false    |
-| bump_fail_if_no_level | Fail if no bump label is found                                                                                    | false               | false    |
+| bump_default_level    | Default bump level if no bumper label is attached [major, minor, patch, none]. Ignored when `bump_fail_if_no_level` is `true` |                     | false    |
+| bump_fail_if_no_level | Fail unless the PR has an explicit bumper label (`major`, `minor`, `patch`, or `none`)                           | false               | false    |
 | bump_include_v        | Include `v` prefix in tag                                                                                         | true                | false    |
 | bump_latest           | Add `latest` tag                                                                                                  | false               | false    |
 | bump_major            | Label name for major bump (bumper:major)                                                                          | bumper:major        | false    |
@@ -98,6 +98,8 @@ jobs:
           number: ${{ steps.finder.outputs.pr }}
           message: ${{ steps.bumper.outputs.tag_status }}
 ```
+
+With `bump_fail_if_no_level: true`, every PR must carry one of the configured bumper labels. Use `bumper:none` when you want to skip releasing but still satisfy the label requirement.
 
 ### Note
 

@@ -37,9 +37,9 @@ func (w *Writer) Set(key, value string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := w.openOutputFile()
 	if err != nil {
-		return fmt.Errorf("failed to open output file: %w", err)
+		return err
 	}
 	defer f.Close()
 
@@ -60,9 +60,9 @@ func (w *Writer) SetMultiline(key, value string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := w.openOutputFile()
 	if err != nil {
-		return fmt.Errorf("failed to open output file: %w", err)
+		return err
 	}
 	defer f.Close()
 
@@ -76,6 +76,15 @@ func (w *Writer) SetMultiline(key, value string) error {
 	}
 
 	return nil
+}
+
+// openOutputFile opens the GitHub Actions output file for appending.
+func (w *Writer) openOutputFile() (*os.File, error) {
+	f, err := os.OpenFile(w.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open output file: %w", err)
+	}
+	return f, nil
 }
 
 // SetAll sets multiple outputs at once

@@ -43,26 +43,23 @@ func TestParse(t *testing.T) {
 }
 
 func TestDefaultVersion(t *testing.T) {
-	// DefaultVersion now always returns 0.0.0
-	// The Bump() call produces the correct first version
+	// DefaultVersion always returns 0.0.0; Bump() produces the correct first version
+	assert.Equal(t, "0.0.0", DefaultVersion().String())
+
 	tests := []struct {
 		level      config.BumpLevel
-		wantBase   string
 		wantBumped string
 	}{
-		{config.BumpLevelMajor, "0.0.0", "1.0.0"},
-		{config.BumpLevelMinor, "0.0.0", "0.1.0"},
-		{config.BumpLevelPatch, "0.0.0", "0.0.1"},
-		{config.BumpLevelNone, "0.0.0", "0.0.0"},
-		{config.BumpLevelEmpty, "0.0.0", "0.0.0"},
+		{config.BumpLevelMajor, "1.0.0"},
+		{config.BumpLevelMinor, "0.1.0"},
+		{config.BumpLevelPatch, "0.0.1"},
+		{config.BumpLevelNone, "0.0.0"},
+		{config.BumpLevelEmpty, "0.0.0"},
 	}
 
 	for _, tt := range tests {
 		t.Run(string(tt.level), func(t *testing.T) {
-			got := DefaultVersion(tt.level)
-			assert.Equal(t, tt.wantBase, got.String())
-			// Verify that bumping produces correct first version
-			bumped := got.Bump(tt.level)
+			bumped := DefaultVersion().Bump(tt.level)
 			assert.Equal(t, tt.wantBumped, bumped.String())
 		})
 	}
@@ -285,25 +282,7 @@ func TestVersion_BuildMetadataHandling(t *testing.T) {
 }
 
 func TestDefaultVersion_ReturnsZero(t *testing.T) {
-	// After the fix, DefaultVersion should return 0.0.0 for all levels
-	// so that Bump() produces the correct first version
-	tests := []struct {
-		level    config.BumpLevel
-		expected string
-	}{
-		{config.BumpLevelMajor, "0.0.0"},
-		{config.BumpLevelMinor, "0.0.0"},
-		{config.BumpLevelPatch, "0.0.0"},
-		{config.BumpLevelNone, "0.0.0"},
-		{config.BumpLevelEmpty, "0.0.0"},
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.level), func(t *testing.T) {
-			v := DefaultVersion(tt.level)
-			assert.Equal(t, tt.expected, v.String())
-		})
-	}
+	assert.Equal(t, "0.0.0", DefaultVersion().String())
 }
 
 func TestVersion_FirstBumpProducesCorrectVersion(t *testing.T) {
@@ -319,8 +298,7 @@ func TestVersion_FirstBumpProducesCorrectVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(string(tt.level), func(t *testing.T) {
-			v := DefaultVersion(tt.level)
-			bumped := v.Bump(tt.level)
+			bumped := DefaultVersion().Bump(tt.level)
 			assert.Equal(t, tt.expected, bumped.String())
 		})
 	}

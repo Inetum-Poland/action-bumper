@@ -117,19 +117,14 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 
 	// Get bump level from labels
 	bumpLevel := b.determineBumpLevel(event.PullRequest.Labels)
-	b.trace(ctx, "Determined bump level", "level", bumpLevel)
+	b.trace(ctx, "Determined bump level from labels", "level", bumpLevel)
 
-	// Use default if no level found from labels
-	if bumpLevel == config.BumpLevelEmpty {
-		bumpLevel = b.cfg.BumpDefaultLevel
-		b.trace(ctx, "Using default level", "level", bumpLevel)
+	if err := b.requireExplicitBumpLabel(bumpLevel, nil); err != nil {
+		return err
 	}
 
-	// Check if bump level is required (after applying default)
-	if bumpLevel == config.BumpLevelEmpty && b.cfg.BumpFailIfNoLevel {
-		fmt.Println("::error ::Job failed as no bump label is found.")
-		return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
-	}
+	bumpLevel = b.applyDefaultBumpLevel(bumpLevel)
+	b.trace(ctx, "Effective bump level", "level", bumpLevel)
 
 	// If still empty or none, skip
 	if bumpLevel == config.BumpLevelEmpty || bumpLevel == config.BumpLevelNone {
@@ -148,11 +143,11 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 	if err != nil {
 		b.logger.Warn("Failed to get latest tag", "error", err)
 		// Use default version
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	} else if currentVersion == nil {
 		// No tags exist yet - use default version
 		b.logger.Info("No existing tags found, using default version")
-		currentVersion = semver.DefaultVersion(bumpLevel)
+		currentVersion = semver.DefaultVersion()
 	}
 
 	// Calculate next version
@@ -200,121 +195,22 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	}
 	b.trace(ctx, "Looking for merged PR", "sha", mergeCommitSHA)
 
-	// Query GitHub API for the merged PR
-	var bumpLevel config.BumpLevel
-	var prNumber int
-	var prTitle string
-
-	mergedPR, err := b.client.GetMergedPRByCommitSHA(ctx, mergeCommitSHA)
+	bumpLevel, prNumber, prTitle, err := b.resolvePushBumpLevel(ctx, mergeCommitSHA)
 	if err != nil {
-		b.logger.Warn("Failed to find merged PR, using default level", "error", err, "sha", mergeCommitSHA)
-		bumpLevel = b.cfg.BumpDefaultLevel
-	} else {
-		b.logger.Info("Found merged PR", "number", mergedPR.Number, "title", mergedPR.Title)
-		b.trace(ctx, "PR labels", "count", len(mergedPR.Labels))
-		prNumber = mergedPR.Number
-		prTitle = mergedPR.Title
-		// Get bump level from PR labels
-		bumpLevel = b.determineBumpLevel(mergedPR.Labels)
-		b.trace(ctx, "Determined bump level from PR", "level", bumpLevel)
-		if bumpLevel == config.BumpLevelEmpty {
-			bumpLevel = b.cfg.BumpDefaultLevel
-			b.trace(ctx, "Using default level", "level", bumpLevel)
-		}
+		return err
 	}
 
-	// Handle skip scenarios
-	if bumpLevel == config.BumpLevelEmpty {
-		if b.cfg.BumpFailIfNoLevel {
-			fmt.Println("::error ::Job failed as no bump label is found.")
-			return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
-		}
-		b.logger.Info("No bump level, skipping")
-		if setErr := b.output.Set("skip", "true"); setErr != nil {
-			return fmt.Errorf("failed to set skip output: %w", setErr)
-		}
+	skipped, err := b.handlePushSkip(bumpLevel)
+	if err != nil {
+		return err
+	}
+	if skipped {
 		return nil
 	}
 
-	if bumpLevel == config.BumpLevelNone {
-		b.logger.Info("Bump level is 'none', skipping")
-		if setErr := b.output.Set("skip", "true"); setErr != nil {
-			return fmt.Errorf("failed to set skip output: %w", setErr)
-		}
-		return nil
-	}
-
-	// Get current version
-	currentVersion, err := b.client.GetLatestTag(ctx)
+	currentVersion, nextVersion, tags, tagMessage, err := b.createAndPushTags(ctx, bumpLevel, prNumber, prTitle)
 	if err != nil {
-		b.logger.Warn("No existing tags, using default")
-		currentVersion = semver.DefaultVersion(bumpLevel)
-	} else if currentVersion == nil {
-		// No tags exist yet - use default version
-		b.logger.Info("No existing tags found, using default version")
-		currentVersion = semver.DefaultVersion(bumpLevel)
-	}
-
-	// Calculate next version
-	nextVersion := currentVersion.Bump(bumpLevel)
-
-	// Configure git
-	if err := b.git.ConfigureUser(b.cfg.BumpTagAsUser, b.cfg.BumpTagAsEmail); err != nil {
-		return fmt.Errorf("failed to configure git user: %w", err)
-	}
-
-	// Set remote URL with authentication
-	if err := b.git.SetRemoteURL(b.cfg.GitHubToken, b.cfg.GitHubRepo); err != nil {
-		return fmt.Errorf("failed to set remote URL: %w", err)
-	}
-
-	// Create tag message with PR info (matching Bash format)
-	var tagMessage string
-	if prNumber > 0 {
-		tagMessage = fmt.Sprintf("%s: PR #%d - %s", nextVersion.FullTag(b.cfg.BumpIncludeV), prNumber, prTitle)
-	} else {
-		tagMessage = fmt.Sprintf("Release %s", nextVersion.FullTag(b.cfg.BumpIncludeV))
-	}
-	tags := []string{nextVersion.FullTag(b.cfg.BumpIncludeV)}
-
-	// Create main tag
-	if err := b.git.CreateTag(tags[0], tagMessage); err != nil {
-		return fmt.Errorf("failed to create tag: %w", err)
-	}
-
-	// Create semver tags (v1, v1.2) if enabled - these target the version tag's commit
-	if b.cfg.BumpSemver {
-		majorTag := nextVersion.MajorTag(b.cfg.BumpIncludeV)
-		minorTag := nextVersion.MinorTag(b.cfg.BumpIncludeV)
-		refSpec := fmt.Sprintf("%s^{commit}", tags[0])
-
-		if err := b.git.CreateOrUpdateTag(majorTag, tagMessage, refSpec); err != nil {
-			b.logger.Warn("Failed to create major tag", "error", err)
-		} else {
-			tags = append(tags, majorTag)
-		}
-
-		if err := b.git.CreateOrUpdateTag(minorTag, tagMessage, refSpec); err != nil {
-			b.logger.Warn("Failed to create minor tag", "error", err)
-		} else {
-			tags = append(tags, minorTag)
-		}
-	}
-
-	// Create latest tag if enabled (targeting the version tag's commit)
-	if b.cfg.BumpLatest {
-		latestTag := "latest"
-		refSpec := fmt.Sprintf("%s^{commit}", tags[0])
-		if err := b.git.CreateOrUpdateTag(latestTag, tagMessage, refSpec); err != nil {
-			b.logger.Warn("Failed to create latest tag", "error", err)
-		} else {
-			tags = append(tags, latestTag)
-		}
-	}
-
-	// Push all tags
-	if err := b.git.PushTags(tags); err != nil {
-		return fmt.Errorf("failed to push tags: %w", err)
+		return err
 	}
 
 	// Generate status message
@@ -340,35 +236,165 @@ func (b *Bumper) handlePushEvent(ctx context.Context, event *github.Event) error
 	return nil
 }
 
+func (b *Bumper) resolvePushBumpLevel(ctx context.Context, mergeCommitSHA string) (bumpLevel config.BumpLevel, prNumber int, prTitle string, err error) {
+	mergedPR, err := b.client.GetMergedPRByCommitSHA(ctx, mergeCommitSHA)
+	if err != nil {
+		if guardErr := b.requireExplicitBumpLabel(config.BumpLevelEmpty, err); guardErr != nil {
+			return config.BumpLevelEmpty, 0, "", guardErr
+		}
+		b.logger.Warn("Failed to find merged PR, using default level", "error", err, "sha", mergeCommitSHA)
+		return b.cfg.BumpDefaultLevel, 0, "", nil
+	}
+
+	b.logger.Info("Found merged PR", "number", mergedPR.Number, "title", mergedPR.Title)
+	b.trace(ctx, "PR labels", "count", len(mergedPR.Labels))
+
+	bumpLevel = b.determineBumpLevel(mergedPR.Labels)
+	b.trace(ctx, "Determined bump level from PR", "level", bumpLevel)
+	if guardErr := b.requireExplicitBumpLabel(bumpLevel, nil); guardErr != nil {
+		return config.BumpLevelEmpty, 0, "", guardErr
+	}
+
+	bumpLevel = b.applyDefaultBumpLevel(bumpLevel)
+	b.trace(ctx, "Effective bump level", "level", bumpLevel)
+
+	return bumpLevel, mergedPR.Number, mergedPR.Title, nil
+}
+
+func (b *Bumper) requireExplicitBumpLabel(bumpLevel config.BumpLevel, cause error) error {
+	if !b.cfg.BumpFailIfNoLevel || bumpLevel != config.BumpLevelEmpty {
+		return nil
+	}
+
+	b.logger.Error("Job failed as no bump label is found")
+	if cause != nil {
+		return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true: %w", cause)
+	}
+
+	return fmt.Errorf("no bump level label found and bump_fail_if_no_level is true")
+}
+
+func (b *Bumper) applyDefaultBumpLevel(bumpLevel config.BumpLevel) config.BumpLevel {
+	if bumpLevel != config.BumpLevelEmpty {
+		return bumpLevel
+	}
+	return b.cfg.BumpDefaultLevel
+}
+
+func (b *Bumper) handlePushSkip(bumpLevel config.BumpLevel) (bool, error) {
+	if bumpLevel != config.BumpLevelEmpty && bumpLevel != config.BumpLevelNone {
+		return false, nil
+	}
+
+	b.logger.Info("Skipping bump", "level", bumpLevel)
+	if err := b.output.Set("skip", "true"); err != nil {
+		return false, fmt.Errorf("failed to set skip output: %w", err)
+	}
+	return true, nil
+}
+
+func (b *Bumper) createAndPushTags(ctx context.Context, bumpLevel config.BumpLevel, prNumber int, prTitle string) (currentVersion, nextVersion *semver.Version, tags []string, tagMessage string, err error) {
+	currentVersion, err = b.client.GetLatestTag(ctx)
+	if err != nil {
+		b.logger.Warn("No existing tags, using default")
+		currentVersion = semver.DefaultVersion()
+	} else if currentVersion == nil {
+		b.logger.Info("No existing tags found, using default version")
+		currentVersion = semver.DefaultVersion()
+	}
+
+	nextVersion = currentVersion.Bump(bumpLevel)
+
+	if err = b.git.ConfigureUser(b.cfg.BumpTagAsUser, b.cfg.BumpTagAsEmail); err != nil {
+		return nil, nil, nil, "", fmt.Errorf("failed to configure git user: %w", err)
+	}
+
+	if err = b.git.SetRemoteURL(b.cfg.GitHubToken, b.cfg.GitHubRepo); err != nil {
+		return nil, nil, nil, "", fmt.Errorf("failed to set remote URL: %w", err)
+	}
+
+	tagMessage = b.pushTagMessage(nextVersion, prNumber, prTitle)
+	tags, err = b.createVersionTags(nextVersion, tagMessage)
+	if err != nil {
+		return nil, nil, nil, "", err
+	}
+
+	if err := b.git.PushTags(tags); err != nil {
+		return nil, nil, nil, "", fmt.Errorf("failed to push tags: %w", err)
+	}
+
+	return currentVersion, nextVersion, tags, tagMessage, nil
+}
+
+func (b *Bumper) pushTagMessage(version *semver.Version, prNumber int, prTitle string) string {
+	if prNumber > 0 {
+		return fmt.Sprintf("%s: PR #%d - %s", version.FullTag(b.cfg.BumpIncludeV), prNumber, prTitle)
+	}
+	return fmt.Sprintf("Release %s", version.FullTag(b.cfg.BumpIncludeV))
+}
+
+func (b *Bumper) createVersionTags(version *semver.Version, tagMessage string) ([]string, error) {
+	mainTag := version.FullTag(b.cfg.BumpIncludeV)
+	tags := []string{mainTag}
+
+	if err := b.git.CreateTag(mainTag, tagMessage); err != nil {
+		return nil, fmt.Errorf("failed to create tag: %w", err)
+	}
+
+	refSpec := fmt.Sprintf("%s^{commit}", mainTag)
+	if b.cfg.BumpSemver {
+		majorTag := version.MajorTag(b.cfg.BumpIncludeV)
+		minorTag := version.MinorTag(b.cfg.BumpIncludeV)
+
+		if err := b.git.CreateOrUpdateTag(majorTag, tagMessage, refSpec); err != nil {
+			b.logger.Warn("Failed to create major tag", "error", err)
+		} else {
+			tags = append(tags, majorTag)
+		}
+
+		if err := b.git.CreateOrUpdateTag(minorTag, tagMessage, refSpec); err != nil {
+			b.logger.Warn("Failed to create minor tag", "error", err)
+		} else {
+			tags = append(tags, minorTag)
+		}
+	}
+
+	if b.cfg.BumpLatest {
+		latestTag := "latest"
+		if err := b.git.CreateOrUpdateTag(latestTag, tagMessage, refSpec); err != nil {
+			b.logger.Warn("Failed to create latest tag", "error", err)
+		} else {
+			tags = append(tags, latestTag)
+		}
+	}
+
+	return tags, nil
+}
+
 // determineBumpLevel determines the bump level from PR labels.
-// Matches Bash behavior: processes in order none → patch → minor → major,
-// with later matches taking priority.
+// Processes all labels in a single pass, highest priority wins (major > minor > patch > none).
 func (b *Bumper) determineBumpLevel(labels []github.Label) config.BumpLevel {
+	priorities := map[string]int{
+		b.cfg.LabelNone:  1,
+		b.cfg.LabelPatch: 2,
+		b.cfg.LabelMinor: 3,
+		b.cfg.LabelMajor: 4,
+	}
+	bumpLevels := map[string]config.BumpLevel{
+		b.cfg.LabelNone:  config.BumpLevelNone,
+		b.cfg.LabelPatch: config.BumpLevelPatch,
+		b.cfg.LabelMinor: config.BumpLevelMinor,
+		b.cfg.LabelMajor: config.BumpLevelMajor,
+	}
+
 	level := config.BumpLevelEmpty
-
-	// Check labels in priority order (lowest to highest)
-	// Each match overwrites the previous, so highest priority wins
+	currentPriority := 0
 	for _, label := range labels {
-		if label.Name == b.cfg.LabelNone {
-			level = config.BumpLevelNone
+		if p, ok := priorities[label.Name]; ok && p > currentPriority {
+			currentPriority = p
+			level = bumpLevels[label.Name]
 		}
 	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelPatch {
-			level = config.BumpLevelPatch
-		}
-	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelMinor {
-			level = config.BumpLevelMinor
-		}
-	}
-	for _, label := range labels {
-		if label.Name == b.cfg.LabelMajor {
-			level = config.BumpLevelMajor
-		}
-	}
-
 	return level
 }
 

@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v57/github"
@@ -77,7 +78,7 @@ func (c *Client) GetLatestTag(ctx context.Context) (*semver.Version, error) {
 // getLatestTagFromFile reads tags from a local JSON file (for testing).
 // Matches Bash behavior: returns the first non-"latest" tag from the array.
 func (c *Client) getLatestTagFromFile() (*semver.Version, error) {
-	tagsFile := c.debugEventPath + "/tags.json"
+	tagsFile := filepath.Join(c.debugEventPath, "tags.json")
 	data, err := os.ReadFile(tagsFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read tags file: %w", err)
@@ -221,7 +222,7 @@ func (c *Client) GetMergedPRByCommitSHA(ctx context.Context, sha string) (*PullR
 
 // getMergedPRFromFile reads PRs from a local JSON file (for testing)
 func (c *Client) getMergedPRFromFile(sha string) (*PullRequest, error) {
-	prFile := c.debugEventPath + "/pull_request.json"
+	prFile := filepath.Join(c.debugEventPath, "pull_request.json")
 	data, err := os.ReadFile(prFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pull_request file: %w", err)

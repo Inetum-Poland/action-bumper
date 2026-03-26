@@ -6,10 +6,10 @@ author: 'Inetum-Poland'
 
 inputs:
   bump_default_level:
-    description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty"
+    description: "Default bump level when no bumper label is attached [major,minor,patch,none]. Ignored when bump_fail_if_no_level is true."
     required: false
   bump_fail_if_no_level:
-    description: "Fail if no bump label is found"
+    description: "Fail unless the PR has an explicit bumper label (major, minor, patch, or none)"
     required: false
     default: "false"
   bump_include_v:

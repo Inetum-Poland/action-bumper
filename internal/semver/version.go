@@ -56,7 +56,7 @@ func MustParse(s string) *Version {
 
 // DefaultVersion returns the starting version (0.0.0) to be bumped for first release.
 // The caller should call Bump() on this to get the actual first version.
-func DefaultVersion(_ config.BumpLevel) *Version {
+func DefaultVersion() *Version {
 	// Always return 0.0.0 - the Bump() call will produce:
 	// - major: 1.0.0
 	// - minor: 0.1.0

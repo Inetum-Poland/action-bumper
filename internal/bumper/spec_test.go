@@ -570,7 +570,7 @@ func TestSpec_DefaultVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := semver.DefaultVersion(tt.level)
+			v := semver.DefaultVersion()
 			bumped := v.Bump(tt.level)
 			assert.Equal(t, tt.want, bumped.FullTag(true))
 		})
