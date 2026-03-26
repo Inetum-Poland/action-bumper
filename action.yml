@@ -11,7 +11,7 @@ inputs:
   bump_fail_if_no_level:
     description: "Fail unless the PR has an explicit bumper label (major, minor, patch, or none)"
     required: false
-    default: "false"
+    default: "true"
   bump_include_v:
     description: "Whether to include v in tag name"
     required: false

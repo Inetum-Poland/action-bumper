@@ -103,7 +103,7 @@ func LoadFromEnv() (*Config, error) {
 
 		// Bump configuration with defaults
 		BumpDefaultLevel:  BumpLevel(os.Getenv("INPUT_BUMP_DEFAULT_LEVEL")),
-		BumpFailIfNoLevel: parseBool(os.Getenv("INPUT_BUMP_FAIL_IF_NO_LEVEL"), false),
+		BumpFailIfNoLevel: parseBool(os.Getenv("INPUT_BUMP_FAIL_IF_NO_LEVEL"), true),
 		BumpIncludeV:      parseBool(os.Getenv("INPUT_BUMP_INCLUDE_V"), true),
 		BumpLatest:        parseBool(os.Getenv("INPUT_BUMP_LATEST"), false),
 		BumpSemver:        parseBool(os.Getenv("INPUT_BUMP_SEMVER"), false),

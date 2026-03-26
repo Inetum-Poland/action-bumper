@@ -33,7 +33,7 @@ func TestLoadFromEnv(t *testing.T) {
 				GitHubRepo:        "owner/repo",
 				GitHubActor:       "testuser",
 				BumpIncludeV:      true,
-				BumpFailIfNoLevel: false,
+				BumpFailIfNoLevel: true,
 				BumpLatest:        false,
 				BumpSemver:        false,
 				LabelMajor:        "bumper:major",
