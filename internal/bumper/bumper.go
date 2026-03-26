@@ -175,6 +175,11 @@ func (b *Bumper) handlePREvent(ctx context.Context, event *github.Event) error {
 	}
 
 	b.logger.Info("Version bump preview", "current", currentVersion.String(), "next", nextVersion.String(), "level", bumpLevel)
+
+	if err := b.client.UpsertPRComment(ctx, event.Number, message); err != nil {
+		return fmt.Errorf("failed to post PR comment: %w", err)
+	}
+
 	return nil
 }
 

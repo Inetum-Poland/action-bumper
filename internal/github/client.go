@@ -244,6 +244,58 @@ func (c *Client) getMergedPRFromFile(sha string) (*PullRequest, error) {
 	return nil, fmt.Errorf("no merged PR found for commit SHA: %s", sha)
 }
 
+const bumperCommentMarker = "[[bumper]]"
+
+// UpsertPRComment creates or updates the bumper bot comment on a pull request.
+// It looks for an existing comment from github-actions[bot] that contains the
+// bumper marker. If found it updates it; otherwise it creates a new one.
+// In debug mode (debugEventPath set) this is a no-op.
+func (c *Client) UpsertPRComment(ctx context.Context, prNumber int, body string) error {
+	if c.debugEventPath != "" {
+		return nil
+	}
+
+	opts := &github.IssueListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: defaultPerPage},
+	}
+
+	var existingID int64
+
+	for {
+		comments, resp, err := c.client.Issues.ListComments(ctx, c.owner, c.repo, prNumber, opts)
+		if err != nil {
+			return fmt.Errorf("failed to list PR comments: %w", err)
+		}
+
+		for _, c := range comments {
+			if c.GetUser().GetLogin() == "github-actions[bot]" &&
+				strings.Contains(c.GetBody(), bumperCommentMarker) {
+				existingID = c.GetID()
+				break
+			}
+		}
+
+		if existingID != 0 || resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	if existingID != 0 {
+		_, _, err := c.client.Issues.EditComment(ctx, c.owner, c.repo, existingID, &github.IssueComment{Body: &body})
+		if err != nil {
+			return fmt.Errorf("failed to update PR comment: %w", err)
+		}
+		return nil
+	}
+
+	_, _, err := c.client.Issues.CreateComment(ctx, c.owner, c.repo, prNumber, &github.IssueComment{Body: &body})
+	if err != nil {
+		return fmt.Errorf("failed to create PR comment: %w", err)
+	}
+	return nil
+}
+
 // getMergedPRFromAPI fetches the merged PR from the GitHub API
 func (c *Client) getMergedPRFromAPI(ctx context.Context, sha string) (*PullRequest, error) {
 	// List closed PRs sorted by updated time (most recent first)
