@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Inetum Poland.
+# Copyright (c) 2024-2026 Inetum Poland.
 
 name: 'bumper - Bump version when merging Pull Request with specific labels. Bump versions on tag push.'
 description: 'Bump version when merging Pull Request with specific labels (bumper:major, bumper:minor, bumper:patch, bumper:none)'
@@ -6,12 +6,12 @@ author: 'Inetum-Poland'
 
 inputs:
   bump_default_level:
-    description: "Default bump level if labels are not attached [major,minor,patch]. Do nothing if it's empty"
+    description: "Default bump level when no bumper label is attached [major,minor,patch,none]. Ignored when bump_fail_if_no_level is true."
     required: false
   bump_fail_if_no_level:
-    description: "Fail if no bump label is found"
+    description: "Fail unless the PR has an explicit bumper label (major, minor, patch, or none)"
     required: false
-    default: "false"
+    default: "true"
   bump_include_v:
     description: "Whether to include v in tag name"
     required: false
@@ -65,7 +65,7 @@ outputs:
 
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://ghcr.io/inetum-poland/action-bumper:4'
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 branding:

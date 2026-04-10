@@ -1,10 +1,8 @@
 [tools]
-shellspec  = 'latest'
-shellcheck = 'latest'
-pre-commit = 'latest'
-semver     = 'latest'
-jq         = 'latest'
+go         = '1.26'
 trufflehog = 'latest'
+pre-commit = 'latest'
+
 
 [plugins]
 trufflehog = 'https://github.com/Inetum-Poland/asdf-trufflehog.git'
