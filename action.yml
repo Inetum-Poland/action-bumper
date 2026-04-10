@@ -65,7 +65,7 @@ outputs:
 
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/inetum-poland/action-bumper:4'
+  image: 'docker://ghcr.io/inetum-poland/action-bumper:5'
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 branding:
